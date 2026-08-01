@@ -97,8 +97,6 @@ function App() {
         onClick={handleOrbClick} 
         data-tauri-drag-region
       >
-        <div className="orb-core" data-tauri-drag-region></div>
-        <div className="orb-glow" data-tauri-drag-region></div>
         <div className="orb-wave" data-tauri-drag-region></div>
       </div>
       <div className="status-text" data-tauri-drag-region>
