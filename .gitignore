@@ -1,0 +1,31 @@
+# Environment variables
+.env
+.env.local
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Rust/Tauri
+target/
+frontend/src-tauri/target/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+*.log
+
+# IDEs and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Executables
+rustup-init.exe
