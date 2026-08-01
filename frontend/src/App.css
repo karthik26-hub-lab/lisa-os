@@ -29,71 +29,78 @@ body {
   background-color: rgba(255, 255, 255, 0.01);
 }
 
-/* The Glass Orb */
-.orb {
+/* Apple-Style Siri Ribbon */
+.siri-ribbon {
   position: relative;
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  background: #000000;
-  overflow: hidden;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+  width: 200px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
   cursor: pointer;
-  transition: transform 0.2s ease-out;
+  transition: all 0.4s cubic-bezier(0.25, 1.5, 0.5, 1);
+  margin-top: 10px;
   margin-bottom: 20px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
-.orb:hover {
-  transform: scale(1.05);
+.siri-ribbon:hover {
+  transform: scaleY(1.5);
+  background: rgba(255, 255, 255, 0.4);
 }
 
-.orb.inactive {
-  filter: grayscale(100%) opacity(0.5);
+.siri-ribbon.inactive {
+  opacity: 0.5;
+  filter: grayscale(100%);
 }
 
-/* Glass reflection (overlay) */
-.orb::after {
-  content: '';
+.siri-ribbon.listening {
+  width: 350px;
+  height: 12px;
+  background: #111;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+/* The colorful glowing wave inside the ribbon */
+.ribbon-glow {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  border-radius: 50%;
-  box-shadow: 
-    inset 0 0 15px rgba(255,255,255,0.1),
-    inset 0 10px 20px rgba(255,255,255,0.25),
-    inset 0 -10px 15px rgba(255,255,255,0.05);
-  pointer-events: none;
-  z-index: 10;
-}
-
-/* The Iridescent Wave */
-.orb-wave {
-  position: absolute;
-  top: 40%;
-  left: 0;
-  width: 200%;
-  height: 20%;
+  border-radius: 10px;
   background: linear-gradient(90deg, 
-    #007aff, #00ffcc, #ff9600, #ff3232, 
-    #007aff
+    #ff2a5f, #ff9b00, #33cc33, #007aff, #b833ff, #ff2a5f
   );
-  filter: blur(12px);
-  animation: wave-flow 4s infinite linear;
-  opacity: 0.6;
-  z-index: 5;
-  transition: opacity 0.3s, filter 0.3s, height 0.3s, top 0.3s;
+  background-size: 200% 100%;
+  opacity: 0;
+  filter: blur(8px);
+  transition: opacity 0.3s ease;
+  pointer-events: none;
 }
 
-.orb.listening .orb-wave {
+/* Solid colorful core when listening */
+.siri-ribbon.listening::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px; right: 2px; bottom: 2px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, 
+    #ff2a5f, #ff9b00, #33cc33, #007aff, #b833ff, #ff2a5f
+  );
+  background-size: 200% 100%;
+  animation: siri-flow 2s infinite linear;
+}
+
+.siri-ribbon.listening .ribbon-glow {
   opacity: 1;
-  filter: blur(16px);
-  height: 35%;
-  top: 32.5%;
-  animation: wave-flow 1.5s infinite linear; /* Faster when listening */
+  animation: siri-flow 2s infinite linear, siri-pulse 1s infinite alternate ease-in-out;
 }
 
-@keyframes wave-flow {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+@keyframes siri-flow {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+@keyframes siri-pulse {
+  0% { transform: scaleY(1); filter: blur(8px); }
+  100% { transform: scaleY(1.8); filter: blur(14px); }
 }
 
 /* Status Text */

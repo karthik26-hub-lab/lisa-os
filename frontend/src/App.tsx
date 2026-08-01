@@ -96,11 +96,11 @@ function App() {
   return (
     <div className="lisa-container" data-tauri-drag-region>
       <div 
-        className={`orb ${status === 'connected' ? 'active' : 'inactive'} ${isListening ? 'listening' : ''}`} 
+        className={`siri-ribbon ${status === 'connected' ? 'active' : 'inactive'} ${isListening ? 'listening' : ''}`} 
         onClick={handleOrbClick} 
         data-tauri-drag-region
       >
-        <div className="orb-wave" data-tauri-drag-region></div>
+        <div className="ribbon-glow" data-tauri-drag-region></div>
       </div>
       <div className="status-text" data-tauri-drag-region>
         {isListening ? "Listening..." : (status === "connected" ? "LISA Online" : "Connecting...")}
