@@ -29,97 +29,71 @@ body {
   background-color: rgba(255, 255, 255, 0.01);
 }
 
-/* The Glassy 3D Eye */
-.lisa-eye {
+/* The Glass Orb */
+.orb {
   position: relative;
-  width: 140px;
-  height: 90px;
-  margin-bottom: 20px;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: #000000;
+  overflow: hidden;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.6);
   cursor: pointer;
   transition: transform 0.2s ease-out;
+  margin-bottom: 20px;
 }
 
-.lisa-eye:hover {
+.orb:hover {
   transform: scale(1.05);
 }
 
-.lisa-eye.inactive {
-  opacity: 0.5;
-  filter: grayscale(100%);
+.orb.inactive {
+  filter: grayscale(100%) opacity(0.5);
 }
 
-/* Wrapper to handle the vertical blink crush */
-.eye-lid {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-}
-
-/* The actual diamond/eye shape */
-.eye-shape {
-  width: 110px;
-  height: 110px;
-  border-radius: 75% 0; /* Creates the pointed eye ellipse */
-  transform: rotate(45deg);
-  background: rgba(255, 255, 255, 0.1);
+/* Glass reflection (overlay) */
+.orb::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 50%;
   box-shadow: 
-    inset 4px 4px 15px rgba(255, 255, 255, 0.9), /* Top-left highlight */
-    inset -4px -4px 15px rgba(255, 255, 255, 0.3), /* Bottom-right inner shadow */
-    0 10px 20px rgba(0, 0, 0, 0.3); /* Drop shadow */
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(10px);
-  overflow: hidden; /* Contains the iris */
-  display: flex;
-  justify-content: center;
-  align-items: center;
+    inset 0 0 15px rgba(255,255,255,0.1),
+    inset 0 10px 20px rgba(255,255,255,0.25),
+    inset 0 -10px 15px rgba(255,255,255,0.05);
+  pointer-events: none;
+  z-index: 10;
 }
 
-/* Iris needs to be counter-rotated so its local axes match the screen */
-.eye-iris {
-  transform: rotate(-45deg);
-  width: 55px;
-  height: 55px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.6);
-  background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 100%);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.5);
+/* The Iridescent Wave */
+.orb-wave {
+  position: absolute;
+  top: 40%;
+  left: 0;
+  width: 200%;
+  height: 20%;
+  background: linear-gradient(90deg, 
+    #007aff, #00ffcc, #ff9600, #ff3232, 
+    #007aff
+  );
+  filter: blur(12px);
+  animation: wave-flow 4s infinite linear;
+  opacity: 0.6;
+  z-index: 5;
+  transition: opacity 0.3s, filter 0.3s, height 0.3s, top 0.3s;
 }
 
-.eye-pupil {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 0 15px #ffffff, 0 0 30px #ffffff;
+.orb.listening .orb-wave {
+  opacity: 1;
+  filter: blur(16px);
+  height: 35%;
+  top: 32.5%;
+  animation: wave-flow 1.5s infinite linear; /* Faster when listening */
 }
 
-/* Listening State Animations */
-.lisa-eye.listening .eye-lid {
-  animation: blink 3.5s infinite;
-}
-
-.lisa-eye.listening .eye-iris {
-  animation: look-around 2.5s infinite ease-in-out;
-}
-
-@keyframes blink {
-  0%, 85%, 100% { transform: scaleY(1); }
-  92% { transform: scaleY(0.1); } /* Squashes the eye vertically to simulate a blink */
-}
-
-@keyframes look-around {
-  /* translateX moves it visually horizontally on the screen because of the counter-rotation! */
-  0% { transform: rotate(-45deg) translateX(0px); }
-  25% { transform: rotate(-45deg) translateX(-15px); } /* Looks left */
-  50% { transform: rotate(-45deg) translateX(0px); }
-  75% { transform: rotate(-45deg) translateX(15px); } /* Looks right */
-  100% { transform: rotate(-45deg) translateX(0px); }
+@keyframes wave-flow {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 /* Status Text */
