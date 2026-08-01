@@ -96,11 +96,17 @@ function App() {
   return (
     <div className="lisa-container" data-tauri-drag-region>
       <div 
-        className={`orb ${status === 'connected' ? 'active' : 'inactive'} ${isListening ? 'listening' : ''}`} 
+        className={`lisa-eye ${status === 'connected' ? 'active' : 'inactive'} ${isListening ? 'listening' : ''}`} 
         onClick={handleOrbClick} 
         data-tauri-drag-region
       >
-        <div className="orb-wave" data-tauri-drag-region></div>
+        <div className="eye-lid" data-tauri-drag-region>
+          <div className="eye-shape" data-tauri-drag-region>
+            <div className="eye-iris" data-tauri-drag-region>
+              <div className="eye-pupil" data-tauri-drag-region></div>
+            </div>
+          </div>
+        </div>
       </div>
       <div className="status-text" data-tauri-drag-region>
         {isListening ? "Listening..." : (status === "connected" ? "LISA Online" : "Connecting...")}
