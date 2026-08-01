@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
 import "./App.css";
 
 // Global interface for Web Speech API
@@ -8,10 +9,12 @@ declare global {
   }
 }
 
+type Message = { role: 'user' | 'ai', content: string };
+
 function App() {
   const [status, setStatus] = useState("disconnected");
   const [isListening, setIsListening] = useState(false);
-  const [messages, setMessages] = useState<string[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const ws = useRef<WebSocket | null>(null);
   const recognition = useRef<any>(null);
 
@@ -26,7 +29,7 @@ function App() {
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === "message") {
-        setMessages((prev) => [...prev, data.content]);
+        setMessages((prev) => [...prev, { role: 'ai', content: data.content }]);
       }
     };
 
@@ -63,7 +66,7 @@ function App() {
         setIsListening(false);
         const finalStr = transcriptRef.current.trim();
         if (finalStr) {
-          setMessages((prev) => [...prev, `You: ${finalStr}`]);
+          setMessages((prev) => [...prev, { role: 'user', content: finalStr }]);
           // Send transcribed text to backend
           if (ws.current && ws.current.readyState === WebSocket.OPEN) {
             ws.current.send(finalStr);
@@ -105,7 +108,9 @@ function App() {
       
       <div className="message-log">
         {messages.slice(-3).map((msg, i) => (
-          <div key={i} className={`message ${msg.startsWith('You:') ? 'user-msg' : 'ai-msg'}`}>{msg}</div>
+          <div key={i} className={`message ${msg.role === 'user' ? 'user-msg' : 'ai-msg'}`}>
+             {msg.role === 'user' ? msg.content : <ReactMarkdown>{msg.content}</ReactMarkdown>}
+          </div>
         ))}
       </div>
     </div>
