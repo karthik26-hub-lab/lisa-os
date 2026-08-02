@@ -85,6 +85,51 @@ function App() {
     };
   }, []);
 
+  // Wake Word Listener
+  useEffect(() => {
+    let wakeWordRecognition: any = null;
+    let isWakeWordActive = true;
+
+    if ('webkitSpeechRecognition' in window) {
+      wakeWordRecognition = new (window as any).webkitSpeechRecognition();
+      wakeWordRecognition.continuous = true;
+      wakeWordRecognition.interimResults = true;
+      
+      wakeWordRecognition.onresult = (event: any) => {
+        if (!isListening && status === 'connected') {
+          let transcript = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            transcript += event.results[i][0].transcript;
+          }
+          
+          const lower = transcript.toLowerCase();
+          if (lower.includes('hey lisa') || lower.includes('hello lisa') || lower.includes('ok lisa')) {
+            console.log("Wake word detected!");
+            wakeWordRecognition.stop();
+            recognition.current?.start();
+          }
+        }
+      };
+      
+      wakeWordRecognition.onend = () => {
+        if (isWakeWordActive && !isListening && status === 'connected') {
+           try { wakeWordRecognition.start(); } catch(e) {}
+        }
+      };
+      
+      if (!isListening && status === 'connected') {
+        try { wakeWordRecognition.start(); } catch(e) {}
+      }
+    }
+
+    return () => {
+      isWakeWordActive = false;
+      if (wakeWordRecognition) {
+        try { wakeWordRecognition.stop(); } catch(e) {}
+      }
+    };
+  }, [isListening, status]);
+
   const handleOrbClick = () => {
     if (isListening) {
       recognition.current?.stop();
