@@ -28,30 +28,35 @@ body {
   background-color: transparent;
 }
 
-/* The Liquid Plasma Orb */
+/* The 8K Ultra Pro Orb */
 .siri-orb {
   position: relative;
-  width: 100px;
-  height: 100px;
-  /* Pink to Cyan gradient */
-  background: linear-gradient(135deg, #ff66cc 0%, #00ccff 100%);
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
+  
+  /* Extremely sharp, volumetric 3D gradient */
+  background: radial-gradient(circle at 30% 30%, #ffffff 0%, #ff88ee 15%, #cc33ff 40%, #00ccff 80%, #0044aa 100%);
+  
+  /* Internal reflections and depth ONLY. No external shadow to avoid clipping/blurring! */
   box-shadow: 
-    0 0 20px rgba(255, 102, 204, 0.6),
-    0 0 40px rgba(0, 204, 255, 0.4),
-    inset 0 0 20px rgba(255, 255, 255, 0.5);
+    inset 0 -15px 30px rgba(0, 0, 0, 0.6),
+    inset 0 10px 20px rgba(255, 255, 255, 0.9),
+    inset -10px -10px 20px rgba(0, 150, 255, 0.5);
+  
+  /* Sharp, clean glass border */
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
   margin-bottom: 20px;
-  /* The liquid border morphing animation */
-  animation: liquid-orb 4s ease-in-out infinite alternate;
-  transition: filter 0.3s ease, transform 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .siri-orb:hover {
-  transform: scale(1.05);
+  transform: scale(1.08);
 }
 
 .siri-orb.inactive {
@@ -59,28 +64,16 @@ body {
 }
 
 .siri-orb.listening {
-  animation-duration: 1s; /* Faster morphing when listening */
-  box-shadow: 
-    0 0 40px rgba(255, 102, 204, 0.9),
-    0 0 80px rgba(0, 204, 255, 0.7),
-    inset 0 0 30px rgba(255, 255, 255, 0.8);
+  /* Dynamic glowing pulse, again NO external blur shadow, just internal brightness shifting */
+  animation: pulse-core 1.5s infinite alternate ease-in-out;
 }
 
-@keyframes liquid-orb {
+@keyframes pulse-core {
   0% {
-    border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%;
-  }
-  25% {
-    border-radius: 55% 45% 52% 48% / 51% 53% 47% 49%;
-  }
-  50% {
-    border-radius: 45% 55% 48% 52% / 49% 47% 53% 51%;
-  }
-  75% {
-    border-radius: 52% 48% 54% 46% / 54% 46% 52% 48%;
+    background: radial-gradient(circle at 30% 30%, #ffffff 0%, #ff88ee 15%, #cc33ff 40%, #00ccff 80%, #0044aa 100%);
   }
   100% {
-    border-radius: 48% 52% 46% 54% / 46% 54% 48% 52%;
+    background: radial-gradient(circle at 30% 30%, #ffffff 10%, #ff55dd 30%, #aa11ff 50%, #00aaff 90%, #002277 100%);
   }
 }
 
