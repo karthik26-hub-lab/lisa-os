@@ -23,11 +23,9 @@
     ],
     "security": {
       "csp": null
-    }
-  },
-  "plugins": {
-    "tray-icon": {
-      "icon": "icons/icon.ico"
+    },
+    "trayIcon": {
+      "iconPath": "icons/icon.ico"
     }
   },
   "bundle": {

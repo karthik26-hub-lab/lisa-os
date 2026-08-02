@@ -18,11 +18,29 @@ def analyze_screen(query: str) -> str:
         img = ImageGrab.grab(all_screens=True).convert("RGB")
         
         client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model='gemini-3.1-flash',
-            contents=[f"Look at this screenshot of my screen and answer: {query}", img]
-        )
-        return response.text
+        contents = [f"Look at this screenshot of my screen and answer: {query}", img]
+        models = [
+            'gemini-3.1-flash-lite',
+            'gemini-3.5-flash-lite',
+            'gemini-2.5-flash-lite',
+            'gemini-3.5-flash',
+            'gemini-3.1-flash',
+            'gemini-2.5-flash'
+        ]
+        
+        last_error = None
+        for model_name in models:
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=contents
+                )
+                return response.text
+            except Exception as e:
+                print(f"[Vision Fallback] {model_name} failed: {e}")
+                last_error = e
+        
+        return f"Failed to analyze screen. All models exhausted. Last error: {last_error}"
     except Exception as e:
         return f"Failed to analyze screen. Error: {str(e)}"
 
@@ -144,13 +162,34 @@ def find_and_click_element(element_description: str) -> str:
         
         client = genai.Client(api_key=api_key)
         prompt = f"Find the UI element that matches: '{element_description}'. Return ONLY its bounding box in the exact format [ymin, xmin, ymax, xmax] where values are 0-1000. Do not include any other text."
+        contents = [prompt, img]
+        models = [
+            'gemini-3.1-flash',
+            'gemini-3.5-flash',
+            'gemini-2.5-flash',
+            'gemini-3.1-flash-lite',
+            'gemini-3.5-flash-lite'
+        ]
         
-        response = client.models.generate_content(
-            model='gemini-3.1-flash',
-            contents=[prompt, img]
-        )
-        
-        bbox_str = response.text.strip()
+        last_error = None
+        response_text = ""
+        for model_name in models:
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=contents
+                )
+                response_text = response.text.strip()
+                break
+            except Exception as e:
+                print(f"[Vision Fallback] {model_name} failed: {e}")
+                last_error = e
+                
+        if not response_text:
+            return f"Failed to get bounding box. All models exhausted. Last error: {last_error}"
+            
+        bbox_str = response_text
+
         
         if bbox_str.startswith("```"):
             lines = bbox_str.split("\n")

@@ -55,6 +55,28 @@ def save_history(history):
     except Exception as e:
         print(f"[Memory] Failed to save history: {e}")
 
+def generate_with_fallback(client, contents, config):
+    models = [
+        'gemini-3.1-flash-lite',
+        'gemini-3.5-flash-lite',
+        'gemini-2.5-flash-lite',
+        'gemini-3.5-flash',
+        'gemini-3.1-flash',
+        'gemini-2.5-flash'
+    ]
+    last_error = None
+    for model_name in models:
+        try:
+            return client.models.generate_content(
+                model=model_name,
+                contents=contents,
+                config=config
+            )
+        except Exception as e:
+            print(f"[Fallback] Model {model_name} failed: {e}")
+            last_error = e
+    raise Exception(f"All models failed. Last error: {last_error}")
+
 def generate_cloud_response(prompt: str) -> str:
     """
     Calls the Google Gemini API, capable of executing OS tools and maintaining memory.
@@ -85,11 +107,7 @@ def generate_cloud_response(prompt: str) -> str:
         contents.append(types.Content(role="user", parts=[types.Part.from_text(text=prompt)]))
         raw_history.append({"role": "user", "text": prompt})
         
-        response = client.models.generate_content(
-            model='gemini-3.1-flash-lite',
-            contents=contents,
-            config=config
-        )
+        response = generate_with_fallback(client, contents, config)
         
         final_text = ""
         
@@ -128,11 +146,7 @@ def generate_cloud_response(prompt: str) -> str:
             contents.append(types.Content(role="user", parts=function_responses))
             
             # Ask the model to generate the final natural language answer based on the tool results
-            final_response = client.models.generate_content(
-                model='gemini-3.1-flash-lite',
-                contents=contents,
-                config=config
-            )
+            final_response = generate_with_fallback(client, contents, config)
             final_text = final_response.text
         else:
             final_text = response.text
