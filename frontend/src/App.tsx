@@ -36,28 +36,6 @@ function App() {
             const filtered = prev.filter(msg => msg.content !== "Thinking...");
             return [...filtered, { role: 'ai', content: data.content }];
           });
-
-          // Text-to-Speech
-          if ('speechSynthesis' in window) {
-            // Cancel any ongoing speech
-            window.speechSynthesis.cancel();
-            
-            // Clean markdown syntax for better speech
-            const cleanText = data.content.replace(/[*#`_]/g, '');
-            const utterance = new SpeechSynthesisUtterance(cleanText);
-            
-            // Try to find a nice female voice
-            const voices = window.speechSynthesis.getVoices();
-            const preferredVoice = voices.find(v => 
-              v.name.includes('Zira') || 
-              v.name.includes('Hazel') || 
-              v.name.includes('Samantha') || 
-              v.name.includes('Female')
-            );
-            if (preferredVoice) utterance.voice = preferredVoice;
-            
-            window.speechSynthesis.speak(utterance);
-          }
         }
       }
     };

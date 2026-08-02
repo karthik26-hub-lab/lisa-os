@@ -1,9 +1,41 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 import uvicorn
 import json
+import threading
+import queue
+import pyttsx3
+import re
 from brain.router import process_message
 
 app = FastAPI(title="LISA OS Core Engine")
+
+# TTS Worker Thread (Avoids blocking FastAPI)
+tts_queue = queue.Queue()
+
+def tts_worker():
+    engine = pyttsx3.init()
+    # Configure Voice (Try to find a female voice like Zira)
+    voices = engine.getProperty('voices')
+    for voice in voices:
+        if "Zira" in voice.name or "Female" in voice.name:
+            engine.setProperty('voice', voice.id)
+            break
+            
+    # Adjust speech rate slightly for a more natural feel
+    rate = engine.getProperty('rate')
+    engine.setProperty('rate', rate - 15)
+
+    while True:
+        text = tts_queue.get()
+        if text is None:
+            break
+        # Clean markdown symbols for cleaner speech
+        clean_text = re.sub(r'[*#`_]', '', text)
+        engine.say(clean_text)
+        engine.runAndWait()
+        tts_queue.task_done()
+
+threading.Thread(target=tts_worker, daemon=True).start()
 
 class ConnectionManager:
     def __init__(self):
@@ -41,6 +73,9 @@ async def websocket_endpoint(websocket: WebSocket):
             
             # Process via Cognitive Engine (Synchronously for now, can be async later)
             ai_response = process_message(data)
+            
+            # Trigger Backend TTS
+            tts_queue.put(ai_response)
             
             response = {
                 "type": "message",
