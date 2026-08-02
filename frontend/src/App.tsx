@@ -15,6 +15,11 @@ type Session = { title: string, messages: { role: string, text: string }[] };
 function App() {
   const [status, setStatus] = useState("disconnected");
   const [isListening, setIsListening] = useState(false);
+  const isListeningRef = useRef(false);
+  useEffect(() => {
+    isListeningRef.current = isListening;
+  }, [isListening]);
+
   const [messages, setMessages] = useState<Message[]>([]);
   
   // UI Toggles
@@ -30,9 +35,63 @@ function App() {
   
   const mainRec = useRef<any>(null);
   const silenceTimer = useRef<any>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationRef = useRef<number>();
   
   const transcriptRef = useRef<string>("");
   const residualRef = useRef<string>("");
+
+  // Particle Canvas Engine
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let time = 0;
+    
+    const render = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const width = canvas.width;
+      const height = canvas.height;
+      const centerY = height / 2;
+      
+      const amplitude = isListeningRef.current ? 40 : 15;
+      const speed = isListeningRef.current ? 0.08 : 0.02;
+      
+      time += speed;
+
+      // Draw 3 layers of sine waves
+      for (let j = 0; j < 3; j++) {
+        const offset = j * Math.PI * 0.6; 
+        
+        for (let i = 0; i < width; i += 4) { 
+          const x = i;
+          const taper = Math.sin(x * Math.PI / width);
+          const y = centerY + Math.sin(x * 0.03 + time + offset) * amplitude * taper;
+          
+          const ratio = x / width;
+          const r = Math.floor(255 * (1 - ratio)); 
+          const g = Math.floor(200 * ratio);       
+          const b = 255;                           
+          
+          ctx.beginPath();
+          ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${0.8 - j * 0.2})`;
+          ctx.fill();
+        }
+      }
+      
+      animationRef.current = requestAnimationFrame(render);
+    };
+    
+    render();
+    
+    return () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, []);
 
   // Initialize WebSocket
   useEffect(() => {
@@ -243,36 +302,43 @@ function App() {
       )}
 
       <div className={`lisa-container ${showHistory ? 'with-sidebar' : ''}`} data-tauri-drag-region>
-        <div className="input-area" data-tauri-drag-region>
-          <form onSubmit={handleChatSubmit} style={{ width: '100%' }}>
-            <input 
-              type="text" 
-              className="chat-input" 
-              placeholder="Message LISA..." 
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-            />
-          </form>
-        </div>
         
         <div 
-          className={`siri-orb ${status === 'connected' ? 'active' : 'inactive'} ${isListening ? 'listening' : ''}`} 
+          className="siri-orb"
           onClick={handleOrbClick} 
           data-tauri-drag-region
         >
+          <canvas ref={canvasRef} width={240} height={240} />
         </div>
-        <div className="status-text" data-tauri-drag-region>
-          {isListening ? "Listening..." : (status === "connected" ? "LISA Online" : "Connecting...")}
-          <button className="history-btn" onClick={() => setLanguage(l => l === 'en-US' ? 'ta-IN' : 'en-US')}>
-             {language === 'en-US' ? "EN" : "TA"}
-          </button>
-          <button className="history-btn" onClick={toggleHistory}>
-             {showHistory ? "Close History" : "View History"}
-          </button>
-          <button className="history-btn" onClick={() => setShowText(!showText)}>
-             {showText ? "Hide Text" : "Show Text"}
-          </button>
-        </div>
+        
+        {showText && (
+          <>
+            <div className="status-text" data-tauri-drag-region>
+              {isListening ? "Listening..." : (status === "connected" ? "LISA Online" : "Connecting...")}
+              <button className="history-btn" onClick={() => setLanguage(l => l === 'en-US' ? 'ta-IN' : 'en-US')}>
+                 {language === 'en-US' ? "EN" : "TA"}
+              </button>
+              <button className="history-btn" onClick={toggleHistory}>
+                 {showHistory ? "Close History" : "View History"}
+              </button>
+              <button className="history-btn" onClick={() => setShowText(!showText)}>
+                 Hide Text
+              </button>
+            </div>
+            
+            <div className="input-area" data-tauri-drag-region>
+              <form onSubmit={handleChatSubmit} style={{ width: '100%' }}>
+                <input 
+                  type="text" 
+                  className="chat-input" 
+                  placeholder="Message LISA..." 
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                />
+              </form>
+            </div>
+          </>
+        )}
         
         {showHistory && activeSession && historyData[activeSession] ? (
           <div className="message-log" data-tauri-drag-region>

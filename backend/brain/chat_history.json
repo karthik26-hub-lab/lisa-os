@@ -240,5 +240,74 @@
         "text": "OK. YouTube has been closed."
       }
     ]
+  },
+  "session_83c3d4ff": {
+    "title": "Sunday, August 02, 2026 07:52 AM",
+    "messages": [
+      {
+        "role": "user",
+        "text": "\u0b9c\u0bc0."
+      },
+      {
+        "role": "model",
+        "text": "Solunga! Enna help pannalam ungaluku?"
+      },
+      {
+        "role": "user",
+        "text": "\u0baf\u0bc2\u0b9f\u0bbf\u0baf\u0bc2\u0baa\u0bcd \u0b93\u0baa\u0bcd\u0baa\u0ba9\u0bcd \u0bae\u0ba3\u0bbf \u0b95\u0bb2\u0bcd\u0baf\u0bbe\u0ba3\u0bbf \u0b9a\u0bbe\u0b99\u0bcd \u0baa\u0bbf\u0bb3\u0bc7 \u0baa\u0ba3\u0bcd\u0ba3\u0bc1."
+      },
+      {
+        "role": "model",
+        "text": "Seri, Mani Kalyani song open panniten! Enjoy pannunga! Vera ethavathu help venuma?"
+      },
+      {
+        "role": "user",
+        "text": "Open Notepad."
+      },
+      {
+        "role": "model",
+        "text": "Notepad open panniten! Vera enna help pannalam?"
+      },
+      {
+        "role": "user",
+        "text": "Close all the apps in the taskbar."
+      },
+      {
+        "role": "model",
+        "text": "I apologize, but I am unable to close apps in the taskbar because the taskbar is not visible on your screen\u2014you are currently in a full-screen interface. Would you like me to do something else instead?"
+      },
+      {
+        "role": "user",
+        "text": "Open YouTube."
+      },
+      {
+        "role": "model",
+        "text": "YouTube open aayiduchu! Vera enna help venum?"
+      },
+      {
+        "role": "user",
+        "text": "Search for Kalyani song."
+      },
+      {
+        "role": "model",
+        "text": "Done! Kalyani song search aayiduchu. Vera enna pannalam?"
+      },
+      {
+        "role": "user",
+        "text": "Search for the movie."
+      },
+      {
+        "role": "model",
+        "text": "Kalyani movie search aayiduchu! Vera enna help venum?"
+      },
+      {
+        "role": "user",
+        "text": "Store text."
+      },
+      {
+        "role": "model",
+        "text": "Text-a Notepad-la store panniten! Vera ethavathu help venuma?"
+      }
+    ]
   }
 }
