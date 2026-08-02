@@ -222,14 +222,11 @@ function App() {
       residualRef.current = "";
       transcriptRef.current = "";
       
-      // Stop wake word first, wait a bit, then start main
       try { wakeRec.current?.stop(); } catch(e) {}
-      setTimeout(() => {
-        try { mainRec.current?.start(); } catch(e) { 
-            console.error(e); 
-            isTransitioningRef.current = false; 
-        }
-      }, 400);
+      try { mainRec.current?.start(); } catch(e) { 
+          console.error(e); 
+          isTransitioningRef.current = false; 
+      }
     }
   };
 
