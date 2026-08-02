@@ -95,18 +95,28 @@ function App() {
 
   return (
     <div className="lisa-container" data-tauri-drag-region>
-      <div 
-        className={`siri-waves-container ${status === 'connected' ? 'active' : 'inactive'} ${isListening ? 'listening' : ''}`} 
-        onClick={handleOrbClick} 
-        data-tauri-drag-region
-      >
-        <svg viewBox="0 0 400 100" className="siri-svg" preserveAspectRatio="none">
-          <path className="wave wave3" d="M0,50 Q12.5,80 25,50 T50,50 T75,50 T100,50 T125,50 T150,50 T175,50 T200,50 T225,50 T250,50 T275,50 T300,50 T325,50 T350,50 T375,50 T400,50" />
-          <path className="wave wave1" d="M0,50 Q25,10 50,50 T100,50 T150,50 T200,50 T250,50 T300,50 T350,50 T400,50" />
-          <path className="wave wave2" d="M0,50 Q50,90 100,50 T200,50 T300,50 T400,50" />
-          <path className="wave wave-core" d="M0,50 L400,50" />
-        </svg>
-      </div>
+      {isListening ? (
+        <div 
+          className="siri-waves-container listening" 
+          onClick={handleOrbClick} 
+          data-tauri-drag-region
+        >
+          <svg viewBox="0 0 400 100" className="siri-svg" preserveAspectRatio="none">
+            <path className="wave wave3" d="M0,50 Q12.5,80 25,50 T50,50 T75,50 T100,50 T125,50 T150,50 T175,50 T200,50 T225,50 T250,50 T275,50 T300,50 T325,50 T350,50 T375,50 T400,50" />
+            <path className="wave wave1" d="M0,50 Q25,10 50,50 T100,50 T150,50 T200,50 T250,50 T300,50 T350,50 T400,50" />
+            <path className="wave wave2" d="M0,50 Q50,90 100,50 T200,50 T300,50 T400,50" />
+            <path className="wave wave-core" d="M0,50 L400,50" />
+          </svg>
+        </div>
+      ) : (
+        <div 
+          className={`siri-orb ${status === 'connected' ? 'active' : 'inactive'}`} 
+          onClick={handleOrbClick} 
+          data-tauri-drag-region
+        >
+          <div className="orb-core" data-tauri-drag-region></div>
+        </div>
+      )}
       <div className="status-text" data-tauri-drag-region>
         {isListening ? "Listening..." : (status === "connected" ? "LISA Online" : "Connecting...")}
       </div>
