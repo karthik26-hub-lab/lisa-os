@@ -93,3 +93,112 @@ def get_system_info() -> str:
                 f"- {battery_info}")
     except Exception as e:
         return f"Failed to retrieve system info. Error: {str(e)}"
+
+# --- Phase 6: GUI Automation ---
+import pyautogui
+import ast
+import time
+
+# Configure PyAutoGUI to be safe
+pyautogui.FAILSAFE = True
+pyautogui.PAUSE = 0.5
+
+def find_and_click_element(element_description: str) -> str:
+    """
+    Takes a screenshot, uses Gemini Vision to find the mathematical bounding box of the described UI element,
+    converts it to screen pixels, and physically moves the mouse to click it.
+    """
+    try:
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            return "Error: GEMINI_API_KEY is missing."
+            
+        img = ImageGrab.grab(all_screens=True).convert("RGB")
+        width, height = img.size
+        
+        client = genai.Client(api_key=api_key)
+        prompt = f"Find the UI element that matches: '{element_description}'. Return ONLY its bounding box in the exact format [ymin, xmin, ymax, xmax] where values are 0-1000. Do not include any other text."
+        
+        response = client.models.generate_content(
+            model='gemini-3.1-flash',
+            contents=[prompt, img]
+        )
+        
+        bbox_str = response.text.strip()
+        
+        # Sometimes the model might wrap in backticks like `[10, 20, 30, 40]`
+        if bbox_str.startswith("```"):
+            lines = bbox_str.split("\n")
+            bbox_str = "".join([l for l in lines if not l.startswith("```")]).strip()
+            
+        bbox = ast.literal_eval(bbox_str)
+        
+        if isinstance(bbox, list) and len(bbox) == 4:
+            ymin, xmin, ymax, xmax = bbox
+            
+            # Convert normalized 0-1000 to actual pixels
+            x = int(((xmin + xmax) / 2 / 1000) * width)
+            y = int(((ymin + ymax) / 2 / 1000) * height)
+            
+            # Perform action
+            pyautogui.moveTo(x, y, duration=0.5)
+            time.sleep(0.1)
+            pyautogui.click()
+            
+            return f"Successfully found '{element_description}' and clicked it at screen coordinates ({x}, {y})."
+        else:
+            return f"Failed to parse bounding box from vision model: {bbox_str}"
+            
+    except Exception as e:
+        return f"Error executing find_and_click_element: {str(e)}"
+
+def type_text(text: str) -> str:
+    """
+    Physically types the given text into the currently focused window on the computer using the keyboard.
+    """
+    try:
+        pyautogui.write(text, interval=0.01)
+        return f"Successfully typed text: '{text}'"
+    except Exception as e:
+        return f"Error typing text: {str(e)}"
+
+def press_key(key: str) -> str:
+    """
+    Presses a specific keyboard key. Valid keys include 'enter', 'tab', 'esc', 'space', 'backspace', 'win', etc.
+    """
+    try:
+        pyautogui.press(key)
+        return f"Successfully pressed key: '{key}'"
+    except Exception as e:
+        return f"Error pressing key: {str(e)}"
+
+def scroll_screen(clicks: int) -> str:
+    """
+    Scrolls the screen using the mouse wheel. Positive numbers scroll up, negative numbers scroll down.
+    Example: -500 to scroll down a bit.
+    """
+    try:
+        pyautogui.scroll(clicks)
+        return f"Successfully scrolled screen by {clicks} units."
+    except Exception as e:
+        return f"Error scrolling screen: {str(e)}"
+
+def move_mouse(x: int, y: int) -> str:
+    """
+    Moves the mouse to exact absolute pixel coordinates on the screen.
+    """
+    try:
+        pyautogui.moveTo(x, y, duration=0.5)
+        return f"Successfully moved mouse to ({x}, {y})."
+    except Exception as e:
+        return f"Error moving mouse: {str(e)}"
+
+def click_on_screen(button: str = "left") -> str:
+    """
+    Clicks the mouse at its current location. 'button' can be 'left', 'right', or 'middle'.
+    """
+    try:
+        pyautogui.click(button=button)
+        return f"Successfully clicked {button} mouse button."
+    except Exception as e:
+        return f"Error clicking mouse: {str(e)}"

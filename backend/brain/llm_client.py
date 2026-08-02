@@ -2,13 +2,35 @@ import os
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
-from .tools import open_application, open_website, get_system_info, analyze_screen
+from .tools import (
+    analyze_screen,
+    open_application,
+    open_website,
+    get_system_info,
+    find_and_click_element,
+    type_text,
+    press_key,
+    scroll_screen,
+    move_mouse,
+    click_on_screen
+)
 from datetime import datetime
 
 load_dotenv()
 
 # Expose these functions to Gemini
-TOOL_FUNCTIONS = [open_application, open_website, get_system_info, analyze_screen]
+TOOL_FUNCTIONS = [
+    analyze_screen,
+    open_application,
+    open_website,
+    get_system_info,
+    find_and_click_element,
+    type_text,
+    press_key,
+    scroll_screen,
+    move_mouse,
+    click_on_screen
+]
 
 import json
 
@@ -44,7 +66,7 @@ def generate_cloud_response(prompt: str) -> str:
     try:
         client = genai.Client(api_key=api_key)
         current_time = datetime.now().strftime('%A, %B %d, %Y %I:%M %p')
-        sys_prompt = f"You are LISA, an advanced desktop AI assistant. The current date and time is {current_time}. You have tools to control the OS. When asked to perform an action, use the appropriate tool. Be concise, helpful, and friendly. CRITICAL: You DO have perfect memory of past conversations. The previous messages are included in your context. NEVER say you don't have access to logs or memory. If asked about history, just summarize the previous messages provided to you. IMPORTANT: If the user asks what is on their screen, or asks you to look at their screen, you MUST call the analyze_screen tool to see it!"
+        sys_prompt = f"You are LISA, an advanced desktop AI assistant. The current date and time is {current_time}. You have tools to control the OS, including full telekinetic control over the mouse and keyboard. When asked to perform an action, use the appropriate tool. Be concise, helpful, and friendly. CRITICAL: You DO have perfect memory of past conversations. The previous messages are included in your context. NEVER say you don't have access to logs or memory. If asked about history, just summarize the previous messages provided to you. IMPORTANT: If the user asks what is on their screen, or asks you to look at their screen, you MUST call the analyze_screen tool. If the user asks you to click on something, use the find_and_click_element tool to locate and click it!"
         
         config = types.GenerateContentConfig(
             system_instruction=sys_prompt,

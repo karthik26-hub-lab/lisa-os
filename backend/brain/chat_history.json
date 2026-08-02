@@ -5,14 +5,6 @@
   },
   {
     "role": "model",
-    "text": "I'm sorry, but I don't have access to logs of our past conversations. My memory is limited to the current session we are having right now. \n\nIs there anything specific you would like help with today?"
-  },
-  {
-    "role": "user",
-    "text": "Show me our history."
-  },
-  {
-    "role": "model",
     "text": "As I mentioned, I don't have access to logs of our past conversations. Each time we start a new chat session, it's a fresh start for me. I don't retain memory of our interactions once a session ends. \n\nIf you'd like to talk about something new or need assistance with a task, I'm here to help!"
   },
   {
@@ -118,5 +110,53 @@
   {
     "role": "model",
     "text": "I've opened YouTube for you, Karthik! Let me know if you need help finding anything specific."
+  },
+  {
+    "role": "user",
+    "text": "I want you to open."
+  },
+  {
+    "role": "model",
+    "text": "OK, Karthik, I have opened YouTube for you in your browser. Is there something specific you'd like to watch or listen to?"
+  },
+  {
+    "role": "user",
+    "text": "So I want you to play Kalyani song."
+  },
+  {
+    "role": "model",
+    "text": "I've searched for \"Kalyani song\" on YouTube and opened the results for you, Karthik. You should see them on your screen now\u2014feel free to click on whichever version you'd like to hear!"
+  },
+  {
+    "role": "user",
+    "text": "Lisa just play the song that is second one Kalyani.From Shreya Ghoshal."
+  },
+  {
+    "role": "model",
+    "text": "I apologize, Karthik, but I am unable to directly interact with elements on your screen to click or play a specific video for you. \n\nHowever, since I have already opened the search results on YouTube, you should be able to see the video you're looking for right there. You can simply click on the second video in the list to start playing it. \n\nIs there anything else I can help you with?"
+  },
+  {
+    "role": "user",
+    "text": "Open Camera app."
+  },
+  {
+    "role": "model",
+    "text": "I have opened the Camera app for you, Karthik! Let me know if there's anything else you need help with."
+  },
+  {
+    "role": "user",
+    "text": "Lisa, Lisa Lisa, Lisa Open Notepad."
+  },
+  {
+    "role": "model",
+    "text": "I've opened Notepad for you, Karthik! Is there anything you'd like to jot down?"
+  },
+  {
+    "role": "user",
+    "text": "Show our chat."
+  },
+  {
+    "role": "model",
+    "text": "Here is the summary of our current conversation:\n\n*   **You introduced yourself:** You mentioned your name is **Karthik** and you are an **ECE student**.\n*   **Breakfast help:** I suggested several protein-packed breakfast ideas for your mom, including scrambled eggs, Greek yogurt, protein oatmeal, and breakfast burritos.\n*   **Weather:** You asked about the weather in Chennai. I checked and informed you that it is currently **30\u00b0C (86\u00b0F)** with cloudy skies.\n*   **YouTube:** You asked to open YouTube and play a specific \"Kalyani\" song by Shreya Ghoshal. I opened the search results for you.\n*   **App Control:** I opened the **Camera** app and **Notepad** as requested.\n*   **Clarification:** We discussed that while I remember the details you provided *within this specific session* (like your name and studies), I do not have access to logs or memory from any past sessions.\n\nIs there anything specific you would like me to note down in the Notepad for you, Karthik?"
   }
 ]
