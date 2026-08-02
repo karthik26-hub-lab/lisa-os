@@ -10,9 +10,32 @@ load_dotenv()
 # Expose these functions to Gemini
 TOOL_FUNCTIONS = [open_application, open_website, get_system_info]
 
+import json
+
+HISTORY_FILE = os.path.join(os.path.dirname(__file__), "chat_history.json")
+MAX_HISTORY_TURNS = 20
+
+def load_history():
+    if not os.path.exists(HISTORY_FILE):
+        return []
+    try:
+        with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except:
+        return []
+
+def save_history(history):
+    # Keep only the last MAX_HISTORY_TURNS * 2 messages (user + model pairs)
+    history = history[-(MAX_HISTORY_TURNS * 2):]
+    try:
+        with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+            json.dump(history, f, indent=2)
+    except Exception as e:
+        print(f"[Memory] Failed to save history: {e}")
+
 def generate_cloud_response(prompt: str) -> str:
     """
-    Calls the Google Gemini API, capable of executing OS tools.
+    Calls the Google Gemini API, capable of executing OS tools and maintaining memory.
     """
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
@@ -21,14 +44,24 @@ def generate_cloud_response(prompt: str) -> str:
     try:
         client = genai.Client(api_key=api_key)
         current_time = datetime.now().strftime('%A, %B %d, %Y %I:%M %p')
-        sys_prompt = f"You are LISA, an advanced desktop AI assistant. The current date and time is {current_time}. You have tools to control the OS. When asked to perform an action, use the appropriate tool. Be concise, helpful, and friendly."
+        sys_prompt = f"You are LISA, an advanced desktop AI assistant. The current date and time is {current_time}. You have tools to control the OS. When asked to perform an action, use the appropriate tool. Be concise, helpful, and friendly. You have memory of past conversations."
         
         config = types.GenerateContentConfig(
             system_instruction=sys_prompt,
             tools=TOOL_FUNCTIONS,
         )
         
-        contents = [types.Content(role="user", parts=[types.Part.from_text(text=prompt)])]
+        # Load memory
+        raw_history = load_history()
+        contents = []
+        for msg in raw_history:
+            # We only store pure text interactions to keep context clean
+            if msg.get("text"):
+                contents.append(types.Content(role=msg["role"], parts=[types.Part.from_text(text=msg["text"])]))
+                
+        # Append current user prompt
+        contents.append(types.Content(role="user", parts=[types.Part.from_text(text=prompt)]))
+        raw_history.append({"role": "user", "text": prompt})
         
         response = client.models.generate_content(
             model='gemini-3.1-flash-lite',
@@ -36,9 +69,11 @@ def generate_cloud_response(prompt: str) -> str:
             config=config
         )
         
+        final_text = ""
+        
         # Handle potential function calls
         if response.function_calls:
-            # Add the model's function call request to the conversation history
+            # Add the model's function call request to the conversation history temporarily
             contents.append(response.candidates[0].content)
             
             function_responses = []
@@ -65,7 +100,7 @@ def generate_cloud_response(prompt: str) -> str:
                     types.Part.from_function_response(name=name, response={"result": res})
                 )
             
-            # Append the results of the function execution as a new user message
+            # Append the results of the function execution as a new user message temporarily
             contents.append(types.Content(role="user", parts=function_responses))
             
             # Ask the model to generate the final natural language answer based on the tool results
@@ -74,9 +109,16 @@ def generate_cloud_response(prompt: str) -> str:
                 contents=contents,
                 config=config
             )
-            return final_response.text
+            final_text = final_response.text
+        else:
+            final_text = response.text
 
-        return response.text
+        # Save AI's final text response to persistent memory
+        if final_text:
+            raw_history.append({"role": "model", "text": final_text})
+            save_history(raw_history)
+            
+        return final_text
     except Exception as e:
         return f"Error communicating with Cloud LLM: {str(e)}"
 
