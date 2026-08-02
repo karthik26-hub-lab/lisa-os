@@ -112,6 +112,7 @@ function App() {
   useEffect(() => {
     let wakeWordRecognition: any = null;
     let isWakeWordActive = true;
+    let isTransitioning = false;
 
     if ('webkitSpeechRecognition' in window) {
       wakeWordRecognition = new (window as any).webkitSpeechRecognition();
@@ -119,18 +120,20 @@ function App() {
       wakeWordRecognition.interimResults = true;
       
       wakeWordRecognition.onresult = (event: any) => {
-        if (!isListening && status === 'connected') {
+        if (!isListening && status === 'connected' && !isTransitioning) {
           let transcript = '';
           for (let i = event.resultIndex; i < event.results.length; ++i) {
             transcript += event.results[i][0].transcript;
           }
           
           const lower = transcript.toLowerCase();
-          const matchRegex = /(?:hey lisa|hello lisa|ok lisa|lisa)\s*(.*)/i;
+          const matchRegex = /\b(?:hey lisa|hello lisa|ok lisa|lisa)\b\s*(.*)/i;
           const match = lower.match(matchRegex);
           
           if (match) {
             console.log("Wake word detected!");
+            isTransitioning = true;
+            setIsListening(true);
             wakeWordRecognition.stop();
             
             // Pass any trailing command text to the main listener
@@ -139,13 +142,13 @@ function App() {
               (window as any).initialTranscriptText = residualCommand;
             }
             
-            recognition.current?.start();
+            try { recognition.current?.start(); } catch (e) { console.error(e); }
           }
         }
       };
       
       wakeWordRecognition.onend = () => {
-        if (isWakeWordActive && !isListening && status === 'connected') {
+        if (!isTransitioning && isWakeWordActive && !isListening && status === 'connected') {
            try { wakeWordRecognition.start(); } catch(e) {}
         }
       };
