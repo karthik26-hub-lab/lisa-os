@@ -96,6 +96,29 @@ async def websocket_endpoint(websocket: WebSocket):
                 await manager.send_personal_message(json.dumps(response), websocket)
                 continue
             
+            # UI Voice Intercepts
+            lower_data = data.lower().strip()
+            if "show the text" in lower_data or "open text" in lower_data:
+                await manager.send_personal_message(json.dumps({"type": "ui_action", "action": "show_text"}), websocket)
+                await manager.send_personal_message(json.dumps({"type": "message", "content": "Text box opened."}), websocket)
+                tts_queue.put("I have opened the text box.")
+                continue
+            if "hide the text" in lower_data or "close text" in lower_data:
+                await manager.send_personal_message(json.dumps({"type": "ui_action", "action": "hide_text"}), websocket)
+                await manager.send_personal_message(json.dumps({"type": "message", "content": "Text box hidden."}), websocket)
+                tts_queue.put("I have hidden the text box.")
+                continue
+            if "open convo history" in lower_data or "show history" in lower_data or "open history" in lower_data:
+                await manager.send_personal_message(json.dumps({"type": "ui_action", "action": "show_history"}), websocket)
+                await manager.send_personal_message(json.dumps({"type": "message", "content": "History opened."}), websocket)
+                tts_queue.put("I have opened the conversation history.")
+                continue
+            if "close convo history" in lower_data or "hide history" in lower_data or "close history" in lower_data:
+                await manager.send_personal_message(json.dumps({"type": "ui_action", "action": "hide_history"}), websocket)
+                await manager.send_personal_message(json.dumps({"type": "message", "content": "History closed."}), websocket)
+                tts_queue.put("I have closed the history panel.")
+                continue
+
             # Send immediate acknowledgement for normal queries
             await manager.send_personal_message(json.dumps({"type": "message", "content": "Thinking..."}), websocket)
             
@@ -122,9 +145,15 @@ def health_check():
 def get_history():
     history_file = os.path.join(os.path.dirname(__file__), 'brain', 'chat_history.json')
     if os.path.exists(history_file):
-        with open(history_file, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return []
+        try:
+            with open(history_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    return {"legacy_session": {"title": "Legacy Session", "messages": data}}
+                return data
+        except:
+            return {}
+    return {}
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

@@ -229,3 +229,96 @@ body {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* --- Phase 8 Sidebar Layout --- */
+.lisa-app-wrapper {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: transparent;
+}
+
+.sidebar {
+  width: 250px;
+  background: rgba(15, 15, 20, 0.95);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+  box-sizing: border-box;
+  animation: slide-right 0.3s cubic-bezier(0.175, 0.885, 0.32, 1);
+  pointer-events: auto;
+}
+
+@keyframes slide-right {
+  from { transform: translateX(-100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+.sidebar-header h3 {
+  margin: 0;
+  font-size: 1.1em;
+  color: #fff;
+  letter-spacing: 1px;
+}
+
+.close-sidebar {
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 1.2em;
+  transition: color 0.2s;
+}
+
+.close-sidebar:hover {
+  color: #fff;
+}
+
+.session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.session-list::-webkit-scrollbar {
+  display: none;
+}
+
+.session-item {
+  padding: 12px 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9em;
+  color: #ccc;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.session-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.session-item.active {
+  background: rgba(0, 150, 255, 0.2);
+  border: 1px solid rgba(0, 150, 255, 0.4);
+  color: #fff;
+}
+
+.lisa-container.with-sidebar {
+  width: calc(100vw - 250px);
+}

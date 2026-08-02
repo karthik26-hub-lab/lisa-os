@@ -33,25 +33,46 @@ TOOL_FUNCTIONS = [
 ]
 
 import json
+import uuid
 
 HISTORY_FILE = os.path.join(os.path.dirname(__file__), "chat_history.json")
-MAX_HISTORY_TURNS = 20
+MAX_HISTORY_TURNS = 50
+CURRENT_SESSION_ID = None
 
 def load_history():
+    global CURRENT_SESSION_ID
     if not os.path.exists(HISTORY_FILE):
-        return []
-    try:
-        with open(HISTORY_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except:
-        return []
+        data = {}
+    else:
+        try:
+            with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except:
+            data = {}
+            
+    # Auto-migrate legacy list format
+    if isinstance(data, list):
+        data = {
+            "legacy_session": {
+                "title": "Legacy Session",
+                "messages": data
+            }
+        }
+        
+    if not CURRENT_SESSION_ID:
+        CURRENT_SESSION_ID = f"session_{uuid.uuid4().hex[:8]}"
+        current_time = datetime.now().strftime('%A, %B %d, %Y %I:%M %p')
+        data[CURRENT_SESSION_ID] = {
+            "title": current_time,
+            "messages": []
+        }
+        
+    return data
 
-def save_history(history):
-    # Keep only the last MAX_HISTORY_TURNS * 2 messages (user + model pairs)
-    history = history[-(MAX_HISTORY_TURNS * 2):]
+def save_history(history_dict):
     try:
         with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-            json.dump(history, f, indent=2)
+            json.dump(history_dict, f, indent=2)
     except Exception as e:
         print(f"[Memory] Failed to save history: {e}")
 
@@ -81,6 +102,7 @@ def generate_cloud_response(prompt: str) -> str:
     """
     Calls the Google Gemini API, capable of executing OS tools and maintaining memory.
     """
+    global CURRENT_SESSION_ID
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         return "Error: GEMINI_API_KEY is not set in the environment or .env file."
@@ -96,16 +118,18 @@ def generate_cloud_response(prompt: str) -> str:
         )
         
         # Load memory
-        raw_history = load_history()
+        history_dict = load_history()
+        current_session_messages = history_dict[CURRENT_SESSION_ID]["messages"]
+        
         contents = []
-        for msg in raw_history:
+        for msg in current_session_messages:
             # We only store pure text interactions to keep context clean
             if msg.get("text"):
                 contents.append(types.Content(role=msg["role"], parts=[types.Part.from_text(text=msg["text"])]))
                 
         # Append current user prompt
         contents.append(types.Content(role="user", parts=[types.Part.from_text(text=prompt)]))
-        raw_history.append({"role": "user", "text": prompt})
+        current_session_messages.append({"role": "user", "text": prompt})
         
         response = generate_with_fallback(client, contents, config)
         
@@ -153,8 +177,9 @@ def generate_cloud_response(prompt: str) -> str:
 
         # Save AI's final text response to persistent memory
         if final_text:
-            raw_history.append({"role": "model", "text": final_text})
-            save_history(raw_history)
+            current_session_messages.append({"role": "model", "text": final_text})
+            history_dict[CURRENT_SESSION_ID]["messages"] = current_session_messages[-(MAX_HISTORY_TURNS * 2):]
+            save_history(history_dict)
             
         return final_text
     except Exception as e:

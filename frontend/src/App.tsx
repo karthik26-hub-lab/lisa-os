@@ -10,34 +10,27 @@ declare global {
 }
 
 type Message = { role: 'user' | 'ai', content: string };
+type Session = { title: string, messages: { role: string, text: string }[] };
 
 function App() {
   const [status, setStatus] = useState("disconnected");
   const [isListening, setIsListening] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   
+  // UI Toggles
+  const [showText, setShowText] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  
+  const [historyData, setHistoryData] = useState<Record<string, Session>>({});
+  const [activeSession, setActiveSession] = useState<string | null>(null);
+  
   const ws = useRef<WebSocket | null>(null);
   
   const mainRec = useRef<any>(null);
-  const wakeRec = useRef<any>(null);
-  
   const silenceTimer = useRef<any>(null);
+  
   const transcriptRef = useRef<string>("");
   const residualRef = useRef<string>("");
-  
-  // State refs to avoid stale closures in event listeners
-  const isListeningRef = useRef(false);
-  const statusRef = useRef("disconnected");
-  const isTransitioningRef = useRef(false);
-
-  // Sync state to refs
-  useEffect(() => {
-    isListeningRef.current = isListening;
-  }, [isListening]);
-
-  useEffect(() => {
-    statusRef.current = status;
-  }, [status]);
 
   // Initialize WebSocket
   useEffect(() => {
@@ -48,7 +41,15 @@ function App() {
     
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      if (data.type === "message") {
+      if (data.type === "ui_action") {
+        if (data.action === "show_text") setShowText(true);
+        if (data.action === "hide_text") setShowText(false);
+        if (data.action === "show_history") {
+          setShowHistory(true);
+          fetchHistory();
+        }
+        if (data.action === "hide_history") setShowHistory(false);
+      } else if (data.type === "message") {
         if (data.content === "Thinking...") {
           setMessages((prev) => [...prev, { role: 'ai', content: data.content }]);
         } else {
@@ -71,44 +72,30 @@ function App() {
     }
 
     const SpeechRecognition = window.webkitSpeechRecognition;
-    
-    // Create instances
     mainRec.current = new SpeechRecognition();
     mainRec.current.continuous = true;
     mainRec.current.interimResults = true;
     mainRec.current.lang = 'en-US';
 
-    wakeRec.current = new SpeechRecognition();
-    wakeRec.current.continuous = true;
-    wakeRec.current.interimResults = true;
-    wakeRec.current.lang = 'en-US';
-
-    // --- MAIN REC LOGIC ---
     mainRec.current.onstart = () => {
       console.log("Main rec started.");
       setIsListening(true);
-      isTransitioningRef.current = false;
       
       transcriptRef.current = residualRef.current;
       residualRef.current = "";
       
       if (silenceTimer.current) clearTimeout(silenceTimer.current);
       silenceTimer.current = setTimeout(() => {
-        console.log("Silence timeout in main rec (onstart). Stopping.");
         if (mainRec.current) mainRec.current.stop();
       }, 3000);
     };
 
     mainRec.current.onresult = (event: any) => {
-      let currentTranscript = transcriptRef.current; // start with residual
-      
-      // We must reconstruct the string carefully
       let liveText = "";
       for (let i = 0; i < event.results.length; i++) {
          liveText += event.results[i][0].transcript;
       }
       
-      // If we had residual text, prepend it to the live text
       if (residualRef.current) {
           transcriptRef.current = residualRef.current + " " + liveText;
       } else {
@@ -117,7 +104,6 @@ function App() {
       
       if (silenceTimer.current) clearTimeout(silenceTimer.current);
       silenceTimer.current = setTimeout(() => {
-        console.log("Silence timeout in main rec (onresult). Stopping.");
         if (mainRec.current) mainRec.current.stop();
       }, 3000);
     };
@@ -143,97 +129,26 @@ function App() {
       residualRef.current = "";
     };
 
-    // --- WAKE REC LOGIC ---
-    wakeRec.current.onstart = () => {
-      console.log("Wake rec started.");
-    };
-
-    wakeRec.current.onerror = (event: any) => {
-      console.warn("Wake rec error:", event.error);
-    };
-
-    wakeRec.current.onresult = (event: any) => {
-      if (isTransitioningRef.current || isListeningRef.current) return;
-      
-      let currentTranscript = "";
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        currentTranscript += event.results[i][0].transcript;
-      }
-      
-      const lower = currentTranscript.toLowerCase();
-      // Match "lisa", "hey lisa", etc.
-      const matchRegex = /\b(?:hey[\s,]*lisa|hello[\s,]*lisa|ok[\s,]*lisa|lisa)\b\s*(.*)/i;
-      const match = lower.match(matchRegex);
-      
-      if (match) {
-        console.log("Wake word detected! Transitioning...");
-        isTransitioningRef.current = true;
-        
-        const residual = match[1].trim();
-        if (residual) {
-          residualRef.current = residual;
-        }
-        
-        wakeRec.current.stop();
-        
-        setTimeout(() => {
-          try { 
-            mainRec.current.start(); 
-          } catch(e) { 
-            console.error("Failed to start mainRec:", e); 
-            isTransitioningRef.current = false; 
-          }
-        }, 400);
-      }
-    };
-
-    wakeRec.current.onend = () => {
-      console.log("Wake rec ended.");
-      if (!isTransitioningRef.current && !isListeningRef.current && statusRef.current === 'connected') {
-         // Auto-restart passive listener
-         setTimeout(() => {
-           if (!isTransitioningRef.current && !isListeningRef.current && statusRef.current === 'connected') {
-             try { wakeRec.current.start(); } catch(e) {}
-           }
-         }, 1000);
-      }
-    };
-
     return () => {
       if (mainRec.current) mainRec.current.stop();
-      if (wakeRec.current) wakeRec.current.stop();
     };
-  }, []); // Run exactly once
-
-  // Manage Wake Word lifecycle based on connected status and listening state
-  useEffect(() => {
-    if (status === 'connected' && !isListening && !isTransitioningRef.current) {
-      try { wakeRec.current?.start(); } catch(e) {}
-    } else if (isListening) {
-      try { wakeRec.current?.stop(); } catch(e) {}
-    }
-  }, [isListening, status]);
+  }, []);
 
   const handleOrbClick = () => {
     if (isListening) {
       mainRec.current?.stop();
     } else {
-      isTransitioningRef.current = true;
       residualRef.current = "";
       transcriptRef.current = "";
-      
-      try { wakeRec.current?.stop(); } catch(e) {}
-      try { mainRec.current?.start(); } catch(e) { 
-          console.error(e); 
-          isTransitioningRef.current = false; 
-      }
+      try { mainRec.current?.start(); } catch(e) { console.error(e); }
     }
   };
 
-  // Register global shortcut
+  // Register global shortcuts
   useEffect(() => {
     import('@tauri-apps/plugin-global-shortcut').then(({ register }) => {
       import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+        // Toggle UI Visibility
         register('Alt+L', async () => {
           const win = getCurrentWindow();
           const isVisible = await win.isVisible();
@@ -244,12 +159,24 @@ function App() {
             await win.setFocus();
           }
         }).catch(e => console.error("Global shortcut error", e));
+
+        // Start listening globally
+        register('CommandOrControl+Shift+L', async () => {
+          console.log("Ctrl+Shift+L pressed");
+          try {
+            if (!isListening) {
+              const win = getCurrentWindow();
+              await win.show();
+              await win.setFocus();
+              mainRec.current?.start();
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        }).catch(e => console.error("Global shortcut Ctrl+Shift+L error", e));
       });
     });
-  }, []);
-
-  const [showHistory, setShowHistory] = useState(false);
-  const [historyData, setHistoryData] = useState<any[]>([]);
+  }, [isListening]);
 
   const fetchHistory = async () => {
     try {
@@ -257,6 +184,9 @@ function App() {
       if (res.ok) {
         const data = await res.json();
         setHistoryData(data);
+        if (!activeSession && Object.keys(data).length > 0) {
+           setActiveSession(Object.keys(data)[Object.keys(data).length - 1]);
+        }
       }
     } catch (e) {
       console.error("Failed to fetch history", e);
@@ -271,43 +201,64 @@ function App() {
   };
 
   return (
-    <div className="lisa-container" data-tauri-drag-region>
-      <div 
-        className={`siri-orb ${status === 'connected' ? 'active' : 'inactive'} ${isListening ? 'listening' : ''}`} 
-        onClick={handleOrbClick} 
-        data-tauri-drag-region
-      >
-      </div>
-      <div className="status-text" data-tauri-drag-region>
-        {isListening ? "Listening..." : (status === "connected" ? "LISA Online" : "Connecting...")}
-        <button className="history-btn" onClick={toggleHistory}>
-           {showHistory ? "Close History" : "View History"}
-        </button>
-      </div>
-      
-      {showHistory ? (
-        <div className="history-panel" data-tauri-drag-region>
-          <h3>Conversation History</h3>
-          <div className="history-list">
-            {historyData.map((item, i) => (
-              <div key={i} className={`history-item ${item.role === 'user' ? 'history-user' : 'history-ai'}`}>
-                <strong>{item.role === 'user' ? 'You:' : 'LISA:'}</strong>
-                <ReactMarkdown>{item.text}</ReactMarkdown>
+    <div className="lisa-app-wrapper" data-tauri-drag-region>
+      {showHistory && (
+        <div className="sidebar" data-tauri-drag-region>
+          <div className="sidebar-header">
+            <h3>LISA Sessions</h3>
+            <button onClick={() => setShowHistory(false)} className="close-sidebar">✕</button>
+          </div>
+          <div className="session-list">
+            {Object.entries(historyData).reverse().map(([id, session]) => (
+              <div 
+                key={id} 
+                className={`session-item ${activeSession === id ? 'active' : ''}`}
+                onClick={() => setActiveSession(id)}
+              >
+                {session.title || id}
               </div>
             ))}
           </div>
         </div>
-      ) : (
-        messages.length > 0 && (
+      )}
+
+      <div className={`lisa-container ${showHistory ? 'with-sidebar' : ''}`} data-tauri-drag-region>
+        <div 
+          className={`siri-orb ${status === 'connected' ? 'active' : 'inactive'} ${isListening ? 'listening' : ''}`} 
+          onClick={handleOrbClick} 
+          data-tauri-drag-region
+        >
+        </div>
+        <div className="status-text" data-tauri-drag-region>
+          {isListening ? "Listening..." : (status === "connected" ? "LISA Online" : "Connecting...")}
+          <button className="history-btn" onClick={toggleHistory}>
+             {showHistory ? "Close History" : "View History"}
+          </button>
+          <button className="history-btn" onClick={() => setShowText(!showText)}>
+             {showText ? "Hide Text" : "Show Text"}
+          </button>
+        </div>
+        
+        {showHistory && activeSession && historyData[activeSession] ? (
           <div className="message-log" data-tauri-drag-region>
-            {messages.map((msg, i) => (
+            {historyData[activeSession].messages.map((msg, i) => (
               <div key={i} className={`message ${msg.role === 'user' ? 'user-msg' : 'ai-msg'}`}>
-                 {msg.role === 'user' ? msg.content : <ReactMarkdown>{msg.content}</ReactMarkdown>}
+                 {msg.role === 'user' ? msg.text : <ReactMarkdown>{msg.text}</ReactMarkdown>}
               </div>
             ))}
           </div>
-        )
-      )}
+        ) : (
+          showText && messages.length > 0 && (
+            <div className="message-log" data-tauri-drag-region>
+              {messages.map((msg, i) => (
+                <div key={i} className={`message ${msg.role === 'user' ? 'user-msg' : 'ai-msg'}`}>
+                   {msg.role === 'user' ? msg.content : <ReactMarkdown>{msg.content}</ReactMarkdown>}
+                </div>
+              ))}
+            </div>
+          )
+        )}
+      </div>
     </div>
   );
 }
