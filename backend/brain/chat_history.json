@@ -1,62 +1,6 @@
 [
   {
     "role": "user",
-    "text": "Show me our history."
-  },
-  {
-    "role": "model",
-    "text": "As I mentioned, I don't have access to logs of our past conversations. Each time we start a new chat session, it's a fresh start for me. I don't retain memory of our interactions once a session ends. \n\nIf you'd like to talk about something new or need assistance with a task, I'm here to help!"
-  },
-  {
-    "role": "user",
-    "text": "OK, uh, just leave those things Like, uh, my mom asked me for what I need to prepare for the breakfast.Can you suggest me a protein packed meal?"
-  },
-  {
-    "role": "model",
-    "text": "For a protein-packed breakfast, here are a few great options depending on what your mom has in the kitchen:\n\n1.  **Classic Scrambled Eggs with Spinach & Feta:** Eggs are an excellent source of protein. Adding spinach and a little feta cheese adds flavor and nutrients. You can serve it with a slice of whole-grain toast.\n2.  **Greek Yogurt Parfait:** Greek yogurt has significantly more protein than regular yogurt. Layer it with some nuts (like almonds or walnuts) and seeds (like chia or flax) for an extra protein and fiber boost.\n3.  **Protein Oatmeal:** Make regular oatmeal, but stir in a scoop of your favorite protein powder, or cook the oats with milk and stir in some nut butter (like peanut or almond butter) once finished.\n4.  **Breakfast Burrito:** Use a whole-wheat tortilla and fill it with scrambled eggs, black beans, and a sprinkle of cheese. Black beans add great plant-based protein and fiber.\n\nDo any of those sound like something she could easily whip up? I can also look up a specific recipe for one of these if you'd like!"
-  },
-  {
-    "role": "user",
-    "text": "Now show me our history."
-  },
-  {
-    "role": "model",
-    "text": "As I mentioned, I don't have access to your past chat history or logs from previous sessions. This current conversation is a fresh start, so there is no history for me to show you. \n\nIs there anything else I can help you with regarding your breakfast or another task?"
-  },
-  {
-    "role": "user",
-    "text": "Uh, my name is Karthik and I am an ECE student."
-  },
-  {
-    "role": "model",
-    "text": "It's nice to meet you, Karthik! Thanks for introducing yourself. Being an ECE (Electronics and Communication Engineering) student is quite a challenge\u2014that's a rigorous field of study!\n\nSince we're just getting to know each other in this session, I don't have records of our previous chats, but I'm happy to help you with anything you need from now on.\n\nAre you working on any interesting projects or studying for any specific exams right now?"
-  },
-  {
-    "role": "user",
-    "text": "Uh, my name is Karthik and I am an ECE student."
-  },
-  {
-    "role": "model",
-    "text": "It's a pleasure to meet you, Karthik! As I mentioned, I don't have access to our past conversations, so I don't \"remember\" you from before, but I'm happy to get to know you now! \n\nSince you're an ECE student, are you currently working on any labs, circuit designs, or projects? I'd love to hear more about what you're studying."
-  },
-  {
-    "role": "user",
-    "text": "Tell me my name and what I'm studying."
-  },
-  {
-    "role": "model",
-    "text": "Your name is Karthik, and you are an ECE student!"
-  },
-  {
-    "role": "user",
-    "text": "Show me our past conversations."
-  },
-  {
-    "role": "model",
-    "text": "I understand you are asking about our history again. As I've mentioned, I do not have access to any logs, records, or memory of our interactions outside of this specific, current conversation window.\n\nSince you just told me your name and field of study earlier in this chat, I am able to \"remember\" that information for the duration of this session, but I cannot retrieve anything from past sessions.\n\nIs there anything else I can help you with today, Karthik?"
-  },
-  {
-    "role": "user",
     "text": "What is the weather now?"
   },
   {
@@ -158,5 +102,61 @@
   {
     "role": "model",
     "text": "Here is the summary of our current conversation:\n\n*   **You introduced yourself:** You mentioned your name is **Karthik** and you are an **ECE student**.\n*   **Breakfast help:** I suggested several protein-packed breakfast ideas for your mom, including scrambled eggs, Greek yogurt, protein oatmeal, and breakfast burritos.\n*   **Weather:** You asked about the weather in Chennai. I checked and informed you that it is currently **30\u00b0C (86\u00b0F)** with cloudy skies.\n*   **YouTube:** You asked to open YouTube and play a specific \"Kalyani\" song by Shreya Ghoshal. I opened the search results for you.\n*   **App Control:** I opened the **Camera** app and **Notepad** as requested.\n*   **Clarification:** We discussed that while I remember the details you provided *within this specific session* (like your name and studies), I do not have access to logs or memory from any past sessions.\n\nIs there anything specific you would like me to note down in the Notepad for you, Karthik?"
+  },
+  {
+    "role": "user",
+    "text": "Open YouTube."
+  },
+  {
+    "role": "model",
+    "text": "OK, Karthik, I have opened YouTube for you again. Is there anything else I can help you with?"
+  },
+  {
+    "role": "user",
+    "text": "Search Kalyani."
+  },
+  {
+    "role": "model",
+    "text": "I have searched for \"Kalyani Shreya Ghoshal\" on YouTube for you, Karthik. You should see the results on your screen now!"
+  },
+  {
+    "role": "user",
+    "text": "Play the first song."
+  },
+  {
+    "role": "model",
+    "text": "I apologize, Karthik, but I am unable to directly click on or play a specific video for you. I can navigate to the search page, but you will need to click on the first video to start it. \n\nIs there anything else I can help you with today?"
+  },
+  {
+    "role": "user",
+    "text": "Oh, OK, Sto."
+  },
+  {
+    "role": "model",
+    "text": "No problem, Karthik! I understand. If you need anything else, feel free to ask. Have a great time listening to your music!"
+  },
+  {
+    "role": "user",
+    "text": "Start typing in the box like I need to do some improvements in the Lisa Pro."
+  },
+  {
+    "role": "model",
+    "text": "I've opened a new Notepad document for you, Karthik. You can go ahead and start typing your improvements for \"Lisa Pro\" right there. Let me know if there's anything else you'd like me to add!"
+  },
+  {
+    "role": "user",
+    "text": "Click the window Start button."
+  },
+  {
+    "role": "model",
+    "text": "I'm sorry, I'm having a little trouble interacting with the system directly to click the Start button right now. You can simply press the Windows key on your keyboard, or click the Start icon in the bottom-left corner of your screen with your mouse. \n\nIs there anything else I can help you with in the meantime?"
+  },
+  {
+    "role": "user",
+    "text": "Open YouTube and play Kalyani song."
+  },
+  {
+    "role": "model",
+    "text": "I have opened the search results for \"Kalyani Shreya Ghoshal\" on YouTube for you, Karthik. Since I'm currently unable to click on the video directly, please go ahead and click the first video in the list to start playing it!"
   }
 ]

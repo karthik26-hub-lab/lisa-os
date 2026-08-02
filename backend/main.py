@@ -68,7 +68,24 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_text()
             print(f"Received from frontend: {data}")
             
-            # Send immediate acknowledgement
+            # Fast Dictation Mode Intercept
+            import re
+            dictation_match = re.match(r'^type\s+(.*)', data, re.IGNORECASE | re.DOTALL)
+            if dictation_match:
+                text_to_type = dictation_match.group(1).strip()
+                import pyautogui
+                # Type the text immediately bypassing the LLM
+                pyautogui.write(text_to_type, interval=0.01)
+                
+                # Send a small confirmation to the UI without TTS
+                response = {
+                    "type": "message",
+                    "content": f"*Dictated:* {text_to_type}"
+                }
+                await manager.send_personal_message(json.dumps(response), websocket)
+                continue
+            
+            # Send immediate acknowledgement for normal queries
             await manager.send_personal_message(json.dumps({"type": "message", "content": "Thinking..."}), websocket)
             
             # Process via Cognitive Engine (Synchronously for now, can be async later)
