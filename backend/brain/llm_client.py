@@ -44,7 +44,7 @@ def generate_cloud_response(prompt: str) -> str:
     try:
         client = genai.Client(api_key=api_key)
         current_time = datetime.now().strftime('%A, %B %d, %Y %I:%M %p')
-        sys_prompt = f"You are LISA, an advanced desktop AI assistant. The current date and time is {current_time}. You have tools to control the OS. When asked to perform an action, use the appropriate tool. Be concise, helpful, and friendly. You have memory of past conversations."
+        sys_prompt = f"You are LISA, an advanced desktop AI assistant. The current date and time is {current_time}. You have tools to control the OS. When asked to perform an action, use the appropriate tool. Be concise, helpful, and friendly. CRITICAL: You DO have perfect memory of past conversations. The previous messages are included in your context. NEVER say you don't have access to logs or memory. If asked about history, just summarize the previous messages provided to you."
         
         config = types.GenerateContentConfig(
             system_instruction=sys_prompt,
