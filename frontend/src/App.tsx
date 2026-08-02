@@ -15,17 +15,37 @@ function App() {
   const [status, setStatus] = useState("disconnected");
   const [isListening, setIsListening] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  
   const ws = useRef<WebSocket | null>(null);
-  const recognition = useRef<any>(null);
+  
+  const mainRec = useRef<any>(null);
+  const wakeRec = useRef<any>(null);
+  
+  const silenceTimer = useRef<any>(null);
+  const transcriptRef = useRef<string>("");
+  const residualRef = useRef<string>("");
+  
+  // State refs to avoid stale closures in event listeners
+  const isListeningRef = useRef(false);
+  const statusRef = useRef("disconnected");
+  const isTransitioningRef = useRef(false);
+
+  // Sync state to refs
+  useEffect(() => {
+    isListeningRef.current = isListening;
+  }, [isListening]);
 
   useEffect(() => {
-    // Connect to Python Backend
-    ws.current = new WebSocket("ws://127.0.0.1:8000/ws/lisa");
+    statusRef.current = status;
+  }, [status]);
 
+  // Initialize WebSocket
+  useEffect(() => {
+    ws.current = new WebSocket("ws://127.0.0.1:8000/ws/lisa");
     ws.current.onopen = () => setStatus("connected");
     ws.current.onclose = () => setStatus("disconnected");
     ws.current.onerror = (error) => console.error("WebSocket error:", error);
-
+    
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === "message") {
@@ -39,169 +59,177 @@ function App() {
         }
       }
     };
-
-    // Initialize Web Speech API
-    if ('webkitSpeechRecognition' in window) {
-      const SpeechRecognition = window.webkitSpeechRecognition;
-      recognition.current = new SpeechRecognition();
-      recognition.current.continuous = true;
-      recognition.current.interimResults = true;
-      recognition.current.lang = 'en-US';
-
-      // We use a ref to accumulate the transcript
-      const transcriptRef = { current: "" };
-      const residualRef = { current: "" };
-      let silenceTimer: any = null;
-
-      // To handle passing residual text from the wake word listener
-      (window as any).initialTranscriptText = "";
-
-      recognition.current.onstart = () => {
-        setIsListening(true);
-        residualRef.current = (window as any).initialTranscriptText || "";
-        transcriptRef.current = residualRef.current;
-        (window as any).initialTranscriptText = ""; // clear after seeding
-        
-        if (silenceTimer) clearTimeout(silenceTimer);
-        silenceTimer = setTimeout(() => {
-            console.log("3 seconds of silence detected from start. Auto-sending...");
-            if (recognition.current) recognition.current.stop();
-        }, 3000);
-      };
-
-      recognition.current.onresult = (event: any) => {
-        let current = residualRef.current ? residualRef.current + " " : "";
-        for (let i = 0; i < event.results.length; i++) {
-          current += event.results[i][0].transcript;
-        }
-        transcriptRef.current = current;
-        
-        // 3-second silence timeout
-        if (silenceTimer) clearTimeout(silenceTimer);
-        silenceTimer = setTimeout(() => {
-            console.log("3 seconds of silence detected. Auto-sending...");
-            if (recognition.current) recognition.current.stop();
-        }, 3000);
-      };
-
-      recognition.current.onerror = (event: any) => {
-        console.error("Speech recognition error", event.error);
-        setIsListening(false);
-      };
-
-      recognition.current.onend = () => {
-        setIsListening(false);
-        if (silenceTimer) clearTimeout(silenceTimer);
-        const finalStr = transcriptRef.current.trim();
-        if (finalStr) {
-          setMessages((prev) => [...prev, { role: 'user', content: finalStr }]);
-          if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-            ws.current.send(finalStr);
-          }
-        }
-      };
-    } else {
-      console.warn("Speech Recognition API not supported in this environment.");
-    }
-
-    return () => {
-      ws.current?.close();
-      if (recognition.current) {
-        recognition.current.stop();
-      }
-    };
+    
+    return () => ws.current?.close();
   }, []);
 
-  // Wake Word Listener
+  // Initialize Speech Recognition Instances (ONCE)
   useEffect(() => {
-    let wakeWordRecognition: any = null;
-    let isWakeWordActive = true;
-    let isTransitioning = false;
-
-    if ('webkitSpeechRecognition' in window) {
-      wakeWordRecognition = new (window as any).webkitSpeechRecognition();
-      wakeWordRecognition.continuous = true;
-      wakeWordRecognition.interimResults = true;
-      
-      wakeWordRecognition.onstart = () => {
-        console.log("Wake word listener active.");
-      };
-
-      wakeWordRecognition.onerror = (event: any) => {
-        console.warn("Wake word error:", event.error);
-      };
-      
-      wakeWordRecognition.onresult = (event: any) => {
-        if (!isListening && status === 'connected' && !isTransitioning) {
-          let transcript = '';
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
-            transcript += event.results[i][0].transcript;
-          }
-          
-          const lower = transcript.toLowerCase();
-          // Extremely robust regex that handles punctuation and just the word LISA
-          const matchRegex = /\b(?:hey[\s,]*lisa|hello[\s,]*lisa|ok[\s,]*lisa|lisa)\b\s*(.*)/i;
-          const match = lower.match(matchRegex);
-          
-          if (match) {
-            console.log("Wake word detected! Transitioning...");
-            isTransitioning = true;
-            wakeWordRecognition.stop();
-            
-            // Pass any trailing command text to the main listener
-            const residualCommand = match[1].trim();
-            if (residualCommand) {
-              (window as any).initialTranscriptText = residualCommand;
-            }
-            
-            // Give Chrome 400ms to completely release the mic from the wake word listener
-            setTimeout(() => {
-               try { 
-                 recognition.current?.start(); 
-               } catch (e) { 
-                 console.error("Failed to start main listener:", e); 
-                 isTransitioning = false;
-               }
-            }, 400);
-          }
-        }
-      };
-      
-      wakeWordRecognition.onend = () => {
-        if (!isTransitioning && isWakeWordActive && !isListening && status === 'connected') {
-           // Prevent Chrome from blocking rapid restarts (common bug)
-           setTimeout(() => {
-             if (isWakeWordActive && !isListening) {
-               try { wakeWordRecognition.start(); } catch(e) {}
-             }
-           }, 1000);
-        } else if (isTransitioning) {
-           // The transition completes when the main listener's onstart fires (which sets isListening to true)
-           // But if it fails, we will be stuck. 
-           // We reset isTransitioning after 3 seconds just in case.
-           setTimeout(() => { isTransitioning = false; }, 3000);
-        }
-      };
-      
-      if (!isListening && status === 'connected') {
-        try { wakeWordRecognition.start(); } catch(e) {}
-      }
+    if (!('webkitSpeechRecognition' in window)) {
+      console.warn("Speech Recognition API not supported.");
+      return;
     }
 
-    return () => {
-      isWakeWordActive = false;
-      if (wakeWordRecognition) {
-        try { wakeWordRecognition.stop(); } catch(e) {}
+    const SpeechRecognition = window.webkitSpeechRecognition;
+    
+    // Create instances
+    mainRec.current = new SpeechRecognition();
+    mainRec.current.continuous = true;
+    mainRec.current.interimResults = true;
+    mainRec.current.lang = 'en-US';
+
+    wakeRec.current = new SpeechRecognition();
+    wakeRec.current.continuous = true;
+    wakeRec.current.interimResults = true;
+    wakeRec.current.lang = 'en-US';
+
+    // --- MAIN REC LOGIC ---
+    mainRec.current.onstart = () => {
+      console.log("Main rec started.");
+      setIsListening(true);
+      isTransitioningRef.current = false;
+      
+      transcriptRef.current = residualRef.current;
+      residualRef.current = "";
+      
+      if (silenceTimer.current) clearTimeout(silenceTimer.current);
+      silenceTimer.current = setTimeout(() => {
+        console.log("Silence timeout in main rec (onstart). Stopping.");
+        if (mainRec.current) mainRec.current.stop();
+      }, 3000);
+    };
+
+    mainRec.current.onresult = (event: any) => {
+      let currentTranscript = transcriptRef.current; // start with residual
+      
+      // We must reconstruct the string carefully
+      let liveText = "";
+      for (let i = 0; i < event.results.length; i++) {
+         liveText += event.results[i][0].transcript;
+      }
+      
+      // If we had residual text, prepend it to the live text
+      if (residualRef.current) {
+          transcriptRef.current = residualRef.current + " " + liveText;
+      } else {
+          transcriptRef.current = liveText;
+      }
+      
+      if (silenceTimer.current) clearTimeout(silenceTimer.current);
+      silenceTimer.current = setTimeout(() => {
+        console.log("Silence timeout in main rec (onresult). Stopping.");
+        if (mainRec.current) mainRec.current.stop();
+      }, 3000);
+    };
+
+    mainRec.current.onerror = (event: any) => {
+      console.error("Main rec error:", event.error);
+      setIsListening(false);
+    };
+
+    mainRec.current.onend = () => {
+      console.log("Main rec ended.");
+      setIsListening(false);
+      if (silenceTimer.current) clearTimeout(silenceTimer.current);
+      
+      const finalStr = transcriptRef.current.trim();
+      if (finalStr) {
+        setMessages((prev) => [...prev, { role: 'user', content: finalStr }]);
+        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+          ws.current.send(finalStr);
+        }
+      }
+      transcriptRef.current = "";
+      residualRef.current = "";
+    };
+
+    // --- WAKE REC LOGIC ---
+    wakeRec.current.onstart = () => {
+      console.log("Wake rec started.");
+    };
+
+    wakeRec.current.onerror = (event: any) => {
+      console.warn("Wake rec error:", event.error);
+    };
+
+    wakeRec.current.onresult = (event: any) => {
+      if (isTransitioningRef.current || isListeningRef.current) return;
+      
+      let currentTranscript = "";
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        currentTranscript += event.results[i][0].transcript;
+      }
+      
+      const lower = currentTranscript.toLowerCase();
+      // Match "lisa", "hey lisa", etc.
+      const matchRegex = /\b(?:hey[\s,]*lisa|hello[\s,]*lisa|ok[\s,]*lisa|lisa)\b\s*(.*)/i;
+      const match = lower.match(matchRegex);
+      
+      if (match) {
+        console.log("Wake word detected! Transitioning...");
+        isTransitioningRef.current = true;
+        
+        const residual = match[1].trim();
+        if (residual) {
+          residualRef.current = residual;
+        }
+        
+        wakeRec.current.stop();
+        
+        setTimeout(() => {
+          try { 
+            mainRec.current.start(); 
+          } catch(e) { 
+            console.error("Failed to start mainRec:", e); 
+            isTransitioningRef.current = false; 
+          }
+        }, 400);
       }
     };
+
+    wakeRec.current.onend = () => {
+      console.log("Wake rec ended.");
+      if (!isTransitioningRef.current && !isListeningRef.current && statusRef.current === 'connected') {
+         // Auto-restart passive listener
+         setTimeout(() => {
+           if (!isTransitioningRef.current && !isListeningRef.current && statusRef.current === 'connected') {
+             try { wakeRec.current.start(); } catch(e) {}
+           }
+         }, 1000);
+      }
+    };
+
+    return () => {
+      if (mainRec.current) mainRec.current.stop();
+      if (wakeRec.current) wakeRec.current.stop();
+    };
+  }, []); // Run exactly once
+
+  // Manage Wake Word lifecycle based on connected status and listening state
+  useEffect(() => {
+    if (status === 'connected' && !isListening && !isTransitioningRef.current) {
+      try { wakeRec.current?.start(); } catch(e) {}
+    } else if (isListening) {
+      try { wakeRec.current?.stop(); } catch(e) {}
+    }
   }, [isListening, status]);
 
   const handleOrbClick = () => {
     if (isListening) {
-      recognition.current?.stop();
+      mainRec.current?.stop();
     } else {
-      (window as any).initialTranscriptText = "";
-      recognition.current?.start();
+      isTransitioningRef.current = true;
+      residualRef.current = "";
+      transcriptRef.current = "";
+      
+      // Stop wake word first, wait a bit, then start main
+      try { wakeRec.current?.stop(); } catch(e) {}
+      setTimeout(() => {
+        try { mainRec.current?.start(); } catch(e) { 
+            console.error(e); 
+            isTransitioningRef.current = false; 
+        }
+      }, 400);
     }
   };
 

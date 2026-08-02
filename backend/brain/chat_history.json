@@ -62,5 +62,21 @@
   {
     "role": "model",
     "text": "I understand you are asking about our history again. As I've mentioned, I do not have access to any logs, records, or memory of our interactions outside of this specific, current conversation window.\n\nSince you just told me your name and field of study earlier in this chat, I am able to \"remember\" that information for the duration of this session, but I cannot retrieve anything from past sessions.\n\nIs there anything else I can help you with today, Karthik?"
+  },
+  {
+    "role": "user",
+    "text": "What is the weather now?"
+  },
+  {
+    "role": "model",
+    "text": "To check the weather for you, I've opened a search in your browser. Since I don't automatically have access to your exact physical location, please take a quick look at the results on your screen!"
+  },
+  {
+    "role": "user",
+    "text": "Yeh rishta stop. I mean I asked for whether you need to tell what is the weather in Chennai now."
+  },
+  {
+    "role": "model",
+    "text": "The current weather in Chennai is available in your browser window. It looks like it's a good idea to check that page for the most accurate, real-time temperature and conditions!"
   }
 ]
