@@ -123,6 +123,14 @@ function App() {
       wakeWordRecognition.continuous = true;
       wakeWordRecognition.interimResults = true;
       
+      wakeWordRecognition.onstart = () => {
+        console.log("Wake word listener active.");
+      };
+
+      wakeWordRecognition.onerror = (event: any) => {
+        console.warn("Wake word error:", event.error);
+      };
+      
       wakeWordRecognition.onresult = (event: any) => {
         if (!isListening && status === 'connected' && !isTransitioning) {
           let transcript = '';
@@ -131,13 +139,13 @@ function App() {
           }
           
           const lower = transcript.toLowerCase();
-          const matchRegex = /\b(?:hey lisa|hello lisa|ok lisa|lisa)\b\s*(.*)/i;
+          // Extremely robust regex that handles punctuation and just the word LISA
+          const matchRegex = /\b(?:hey[\s,]*lisa|hello[\s,]*lisa|ok[\s,]*lisa|lisa)\b\s*(.*)/i;
           const match = lower.match(matchRegex);
           
           if (match) {
-            console.log("Wake word detected!");
+            console.log("Wake word detected! Transitioning...");
             isTransitioning = true;
-            setIsListening(true);
             wakeWordRecognition.stop();
             
             // Pass any trailing command text to the main listener
@@ -146,14 +154,32 @@ function App() {
               (window as any).initialTranscriptText = residualCommand;
             }
             
-            try { recognition.current?.start(); } catch (e) { console.error(e); }
+            // Give Chrome 400ms to completely release the mic from the wake word listener
+            setTimeout(() => {
+               try { 
+                 recognition.current?.start(); 
+               } catch (e) { 
+                 console.error("Failed to start main listener:", e); 
+                 isTransitioning = false;
+               }
+            }, 400);
           }
         }
       };
       
       wakeWordRecognition.onend = () => {
         if (!isTransitioning && isWakeWordActive && !isListening && status === 'connected') {
-           try { wakeWordRecognition.start(); } catch(e) {}
+           // Prevent Chrome from blocking rapid restarts (common bug)
+           setTimeout(() => {
+             if (isWakeWordActive && !isListening) {
+               try { wakeWordRecognition.start(); } catch(e) {}
+             }
+           }, 1000);
+        } else if (isTransitioning) {
+           // The transition completes when the main listener's onstart fires (which sets isListening to true)
+           // But if it fails, we will be stuck. 
+           // We reset isTransitioning after 3 seconds just in case.
+           setTimeout(() => { isTransitioning = false; }, 3000);
         }
       };
       
