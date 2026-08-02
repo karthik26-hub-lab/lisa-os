@@ -20,6 +20,8 @@ function App() {
   // UI Toggles
   const [showText, setShowText] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [language, setLanguage] = useState("en-US");
+  const [chatInput, setChatInput] = useState("");
   
   const [historyData, setHistoryData] = useState<Record<string, Session>>({});
   const [activeSession, setActiveSession] = useState<string | null>(null);
@@ -75,7 +77,7 @@ function App() {
     mainRec.current = new SpeechRecognition();
     mainRec.current.continuous = true;
     mainRec.current.interimResults = true;
-    mainRec.current.lang = 'en-US';
+    mainRec.current.lang = language;
 
     mainRec.current.onstart = () => {
       console.log("Main rec started.");
@@ -133,6 +135,12 @@ function App() {
       if (mainRec.current) mainRec.current.stop();
     };
   }, []);
+
+  useEffect(() => {
+    if (mainRec.current) {
+      mainRec.current.lang = language;
+    }
+  }, [language]);
 
   const handleOrbClick = () => {
     if (isListening) {
@@ -200,6 +208,18 @@ function App() {
     setShowHistory(!showHistory);
   };
 
+  const handleChatSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+    
+    setMessages((prev) => [...prev, { role: 'user', content: chatInput.trim() }]);
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      ws.current.send(chatInput.trim());
+    }
+    setChatInput("");
+    setShowText(true);
+  };
+
   return (
     <div className="lisa-app-wrapper" data-tauri-drag-region>
       {showHistory && (
@@ -223,6 +243,18 @@ function App() {
       )}
 
       <div className={`lisa-container ${showHistory ? 'with-sidebar' : ''}`} data-tauri-drag-region>
+        <div className="input-area" data-tauri-drag-region>
+          <form onSubmit={handleChatSubmit} style={{ width: '100%' }}>
+            <input 
+              type="text" 
+              className="chat-input" 
+              placeholder="Message LISA..." 
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+            />
+          </form>
+        </div>
+        
         <div 
           className={`siri-orb ${status === 'connected' ? 'active' : 'inactive'} ${isListening ? 'listening' : ''}`} 
           onClick={handleOrbClick} 
@@ -231,6 +263,9 @@ function App() {
         </div>
         <div className="status-text" data-tauri-drag-region>
           {isListening ? "Listening..." : (status === "connected" ? "LISA Online" : "Connecting...")}
+          <button className="history-btn" onClick={() => setLanguage(l => l === 'en-US' ? 'ta-IN' : 'en-US')}>
+             {language === 'en-US' ? "EN" : "TA"}
+          </button>
           <button className="history-btn" onClick={toggleHistory}>
              {showHistory ? "Close History" : "View History"}
           </button>

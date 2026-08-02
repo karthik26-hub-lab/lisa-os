@@ -322,3 +322,39 @@ body {
 .lisa-container.with-sidebar {
   width: calc(100vw - 250px);
 }
+
+/* --- Phase 9 Chat Input --- */
+.input-area {
+  width: 90%;
+  max-width: 650px;
+  margin-top: auto; /* Push it to the bottom */
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.chat-input {
+  width: 100%;
+  padding: 15px 20px;
+  background: rgba(20, 20, 30, 0.6);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 30px;
+  color: white;
+  font-size: 1em;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  outline: none;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.chat-input:focus {
+  background: rgba(30, 30, 45, 0.8);
+  border-color: rgba(0, 200, 255, 0.5);
+  box-shadow: 0 0 15px rgba(0, 200, 255, 0.3);
+}
+
+.chat-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
