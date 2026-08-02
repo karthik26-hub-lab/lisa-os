@@ -31,8 +31,8 @@ body {
 /* The Perfect Siri Orb */
 .siri-orb {
   position: relative;
-  width: 150px;
-  height: 150px;
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
   background: radial-gradient(circle at 50% 50%, #202255 0%, #101235 50%, #050614 100%);
   box-shadow: 
@@ -145,15 +145,22 @@ body {
 .message-log {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: 12px;
-  width: 100%;
-  max-width: 500px;
+  width: 90%;
+  max-width: 650px;
+  max-height: 50vh;
   padding: 20px;
-  /* Make it scrollable */
   overflow-y: auto;
-  flex-grow: 1;
   margin-bottom: auto;
+  margin-top: 20px;
+  
+  /* The Glass Box */
+  background: rgba(20, 20, 30, 0.6);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 /* Hide scrollbar for a clean look */

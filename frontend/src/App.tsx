@@ -113,13 +113,15 @@ function App() {
         {isListening ? "Listening..." : (status === "connected" ? "LISA Online" : "Connecting...")}
       </div>
       
-      <div className="message-log">
-        {messages.slice(-3).map((msg, i) => (
-          <div key={i} className={`message ${msg.role === 'user' ? 'user-msg' : 'ai-msg'}`}>
-             {msg.role === 'user' ? msg.content : <ReactMarkdown>{msg.content}</ReactMarkdown>}
-          </div>
-        ))}
-      </div>
+      {messages.length > 0 && (
+        <div className="message-log" data-tauri-drag-region>
+          {messages.map((msg, i) => (
+            <div key={i} className={`message ${msg.role === 'user' ? 'user-msg' : 'ai-msg'}`}>
+               {msg.role === 'user' ? msg.content : <ReactMarkdown>{msg.content}</ReactMarkdown>}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
