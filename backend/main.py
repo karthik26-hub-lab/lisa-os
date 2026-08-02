@@ -7,7 +7,18 @@ import pyttsx3
 import re
 from brain.router import process_message
 
+from fastapi.middleware.cors import CORSMiddleware
+import os
+
 app = FastAPI(title="LISA OS Core Engine")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # TTS Worker Thread (Avoids blocking FastAPI)
 tts_queue = queue.Queue()
@@ -106,6 +117,14 @@ async def websocket_endpoint(websocket: WebSocket):
 @app.get("/health")
 def health_check():
     return {"status": "LISA OS Core is running"}
+
+@app.get("/history")
+def get_history():
+    history_file = os.path.join(os.path.dirname(__file__), 'brain', 'chat_history.json')
+    if os.path.exists(history_file):
+        with open(history_file, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return []
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

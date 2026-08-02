@@ -143,11 +143,86 @@ body {
 .message.ai-msg {
   color: rgba(255, 255, 255, 0.95);
   background: transparent;
-  border: none;
+  word-break: break-word;
+}
+
+/* --- History Widget --- */
+.history-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-left: 10px;
+  font-size: 0.8em;
+  transition: all 0.2s;
+  pointer-events: auto;
+}
+
+.history-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.history-panel {
+  width: 90%;
+  max-width: 400px;
+  max-height: 400px;
+  background: rgba(20, 20, 20, 0.85);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  margin-top: 15px;
+  padding: 15px;
+  overflow-y: auto;
+  pointer-events: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-panel h3 {
+  margin: 0 0 10px 0;
+  color: #fff;
+  font-size: 1.1em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 5px;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-item {
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.9em;
+  line-height: 1.4;
+  color: #eee;
+}
+
+.history-user {
+  background: rgba(0, 120, 255, 0.2);
+  align-self: flex-end;
+  border: 1px solid rgba(0, 120, 255, 0.3);
+}
+
+.history-ai {
+  background: rgba(255, 255, 255, 0.1);
   align-self: flex-start;
-  padding: 10px 15px;
-  font-size: 0.95em;
-  line-height: 1.5;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.history-item strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #00e5ff;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 @keyframes fade-in {

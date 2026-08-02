@@ -94,10 +94,10 @@ def get_system_info() -> str:
     except Exception as e:
         return f"Failed to retrieve system info. Error: {str(e)}"
 
-# --- Phase 6: GUI Automation ---
 import pyautogui
 import ast
 import time
+import uiautomation as auto
 
 # Configure PyAutoGUI to be safe
 pyautogui.FAILSAFE = True
@@ -107,7 +107,33 @@ def find_and_click_element(element_description: str) -> str:
     """
     Takes a screenshot, uses Gemini Vision to find the mathematical bounding box of the described UI element,
     converts it to screen pixels, and physically moves the mouse to click it.
+    Uses Windows UIAutomation as a lightning-fast primary method before falling back to Vision.
     """
+    # 1. Primary Method: Windows UIAutomation (Instant & 100% accurate)
+    try:
+        window = auto.GetForegroundControl()
+        if window:
+            # Try exact match
+            ctrl = window.Control(searchDepth=7, Name=element_description)
+            if ctrl.Exists(0.5, 0.1):
+                rect = ctrl.BoundingRectangle
+                x, y = (rect.left + rect.right) // 2, (rect.top + rect.bottom) // 2
+                pyautogui.moveTo(x, y, duration=0.2)
+                pyautogui.click()
+                return f"Successfully clicked '{element_description}' via UIAutomation."
+                
+            # Try partial match
+            for c, depth in auto.WalkControl(window, maxDepth=7):
+                if c.Name and element_description.lower() in c.Name.lower():
+                    rect = c.BoundingRectangle
+                    x, y = (rect.left + rect.right) // 2, (rect.top + rect.bottom) // 2
+                    pyautogui.moveTo(x, y, duration=0.2)
+                    pyautogui.click()
+                    return f"Successfully clicked '{c.Name}' via UIAutomation."
+    except Exception as e:
+        print(f"UIAutomation failed, falling back to Vision: {e}")
+        
+    # 2. Fallback Method: Gemini Vision Bounding Boxes
     try:
         api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
@@ -126,7 +152,6 @@ def find_and_click_element(element_description: str) -> str:
         
         bbox_str = response.text.strip()
         
-        # Sometimes the model might wrap in backticks like `[10, 20, 30, 40]`
         if bbox_str.startswith("```"):
             lines = bbox_str.split("\n")
             bbox_str = "".join([l for l in lines if not l.startswith("```")]).strip()
@@ -135,17 +160,14 @@ def find_and_click_element(element_description: str) -> str:
         
         if isinstance(bbox, list) and len(bbox) == 4:
             ymin, xmin, ymax, xmax = bbox
-            
-            # Convert normalized 0-1000 to actual pixels
             x = int(((xmin + xmax) / 2 / 1000) * width)
             y = int(((ymin + ymax) / 2 / 1000) * height)
             
-            # Perform action
             pyautogui.moveTo(x, y, duration=0.5)
             time.sleep(0.1)
             pyautogui.click()
             
-            return f"Successfully found '{element_description}' and clicked it at screen coordinates ({x}, {y})."
+            return f"Successfully found '{element_description}' via Vision and clicked it at ({x}, {y})."
         else:
             return f"Failed to parse bounding box from vision model: {bbox_str}"
             

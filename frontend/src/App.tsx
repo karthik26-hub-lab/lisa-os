@@ -230,6 +230,46 @@ function App() {
     }
   };
 
+  // Register global shortcut
+  useEffect(() => {
+    import('@tauri-apps/plugin-global-shortcut').then(({ register }) => {
+      import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+        register('Alt+L', async () => {
+          const win = getCurrentWindow();
+          const isVisible = await win.isVisible();
+          if (isVisible) {
+            await win.hide();
+          } else {
+            await win.show();
+            await win.setFocus();
+          }
+        }).catch(e => console.error("Global shortcut error", e));
+      });
+    });
+  }, []);
+
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyData, setHistoryData] = useState<any[]>([]);
+
+  const fetchHistory = async () => {
+    try {
+      const res = await fetch("http://127.0.0.1:8000/history");
+      if (res.ok) {
+        const data = await res.json();
+        setHistoryData(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch history", e);
+    }
+  };
+
+  const toggleHistory = () => {
+    if (!showHistory) {
+      fetchHistory();
+    }
+    setShowHistory(!showHistory);
+  };
+
   return (
     <div className="lisa-container" data-tauri-drag-region>
       <div 
@@ -240,16 +280,33 @@ function App() {
       </div>
       <div className="status-text" data-tauri-drag-region>
         {isListening ? "Listening..." : (status === "connected" ? "LISA Online" : "Connecting...")}
+        <button className="history-btn" onClick={toggleHistory}>
+           {showHistory ? "Close History" : "View History"}
+        </button>
       </div>
       
-      {messages.length > 0 && (
-        <div className="message-log" data-tauri-drag-region>
-          {messages.map((msg, i) => (
-            <div key={i} className={`message ${msg.role === 'user' ? 'user-msg' : 'ai-msg'}`}>
-               {msg.role === 'user' ? msg.content : <ReactMarkdown>{msg.content}</ReactMarkdown>}
-            </div>
-          ))}
+      {showHistory ? (
+        <div className="history-panel" data-tauri-drag-region>
+          <h3>Conversation History</h3>
+          <div className="history-list">
+            {historyData.map((item, i) => (
+              <div key={i} className={`history-item ${item.role === 'user' ? 'history-user' : 'history-ai'}`}>
+                <strong>{item.role === 'user' ? 'You:' : 'LISA:'}</strong>
+                <ReactMarkdown>{item.text}</ReactMarkdown>
+              </div>
+            ))}
+          </div>
         </div>
+      ) : (
+        messages.length > 0 && (
+          <div className="message-log" data-tauri-drag-region>
+            {messages.map((msg, i) => (
+              <div key={i} className={`message ${msg.role === 'user' ? 'user-msg' : 'ai-msg'}`}>
+                 {msg.role === 'user' ? msg.content : <ReactMarkdown>{msg.content}</ReactMarkdown>}
+              </div>
+            ))}
+          </div>
+        )
       )}
     </div>
   );

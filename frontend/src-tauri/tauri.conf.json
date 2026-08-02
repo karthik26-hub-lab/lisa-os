@@ -25,6 +25,11 @@
       "csp": null
     }
   },
+  "plugins": {
+    "tray-icon": {
+      "icon": "icons/icon.ico"
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",
