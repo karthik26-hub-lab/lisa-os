@@ -44,24 +44,40 @@ function App() {
     if ('webkitSpeechRecognition' in window) {
       const SpeechRecognition = window.webkitSpeechRecognition;
       recognition.current = new SpeechRecognition();
-      recognition.current.continuous = true; // Keeps listening until manually stopped
+      recognition.current.continuous = true;
       recognition.current.interimResults = true;
       recognition.current.lang = 'en-US';
 
-      // We use a ref to accumulate the transcript without triggering re-renders on every word
+      // We use a ref to accumulate the transcript
       const transcriptRef = { current: "" };
+      const residualRef = { current: "" };
+      let silenceTimer: any = null;
+
+      // To handle passing residual text from the wake word listener
+      (window as any).initialTranscriptText = "";
 
       recognition.current.onstart = () => {
         setIsListening(true);
-        transcriptRef.current = ""; // Clear previous
+        residualRef.current = (window as any).initialTranscriptText || "";
+        transcriptRef.current = residualRef.current;
+        (window as any).initialTranscriptText = ""; // clear after seeding
+        
+        if (silenceTimer) clearTimeout(silenceTimer);
       };
 
       recognition.current.onresult = (event: any) => {
-        let current = "";
+        let current = residualRef.current ? residualRef.current + " " : "";
         for (let i = 0; i < event.results.length; i++) {
           current += event.results[i][0].transcript;
         }
         transcriptRef.current = current;
+        
+        // 3-second silence timeout
+        if (silenceTimer) clearTimeout(silenceTimer);
+        silenceTimer = setTimeout(() => {
+            console.log("3 seconds of silence detected. Auto-sending...");
+            if (recognition.current) recognition.current.stop();
+        }, 3000);
       };
 
       recognition.current.onerror = (event: any) => {
@@ -71,10 +87,10 @@ function App() {
 
       recognition.current.onend = () => {
         setIsListening(false);
+        if (silenceTimer) clearTimeout(silenceTimer);
         const finalStr = transcriptRef.current.trim();
         if (finalStr) {
           setMessages((prev) => [...prev, { role: 'user', content: finalStr }]);
-          // Send transcribed text to backend
           if (ws.current && ws.current.readyState === WebSocket.OPEN) {
             ws.current.send(finalStr);
           }
@@ -110,9 +126,19 @@ function App() {
           }
           
           const lower = transcript.toLowerCase();
-          if (lower.includes('hey lisa') || lower.includes('hello lisa') || lower.includes('ok lisa')) {
+          const matchRegex = /(?:hey lisa|hello lisa|ok lisa|lisa)\s*(.*)/i;
+          const match = lower.match(matchRegex);
+          
+          if (match) {
             console.log("Wake word detected!");
             wakeWordRecognition.stop();
+            
+            // Pass any trailing command text to the main listener
+            const residualCommand = match[1].trim();
+            if (residualCommand) {
+              (window as any).initialTranscriptText = residualCommand;
+            }
+            
             recognition.current?.start();
           }
         }
@@ -141,6 +167,7 @@ function App() {
     if (isListening) {
       recognition.current?.stop();
     } else {
+      (window as any).initialTranscriptText = "";
       recognition.current?.start();
     }
   };

@@ -30,5 +30,37 @@
   {
     "role": "model",
     "text": "As I mentioned, I don't have access to your past chat history or logs from previous sessions. This current conversation is a fresh start, so there is no history for me to show you. \n\nIs there anything else I can help you with regarding your breakfast or another task?"
+  },
+  {
+    "role": "user",
+    "text": "Uh, my name is Karthik and I am an ECE student."
+  },
+  {
+    "role": "model",
+    "text": "It's nice to meet you, Karthik! Thanks for introducing yourself. Being an ECE (Electronics and Communication Engineering) student is quite a challenge\u2014that's a rigorous field of study!\n\nSince we're just getting to know each other in this session, I don't have records of our previous chats, but I'm happy to help you with anything you need from now on.\n\nAre you working on any interesting projects or studying for any specific exams right now?"
+  },
+  {
+    "role": "user",
+    "text": "Uh, my name is Karthik and I am an ECE student."
+  },
+  {
+    "role": "model",
+    "text": "It's a pleasure to meet you, Karthik! As I mentioned, I don't have access to our past conversations, so I don't \"remember\" you from before, but I'm happy to get to know you now! \n\nSince you're an ECE student, are you currently working on any labs, circuit designs, or projects? I'd love to hear more about what you're studying."
+  },
+  {
+    "role": "user",
+    "text": "Tell me my name and what I'm studying."
+  },
+  {
+    "role": "model",
+    "text": "Your name is Karthik, and you are an ECE student!"
+  },
+  {
+    "role": "user",
+    "text": "Show me our past conversations."
+  },
+  {
+    "role": "model",
+    "text": "I understand you are asking about our history again. As I've mentioned, I do not have access to any logs, records, or memory of our interactions outside of this specific, current conversation window.\n\nSince you just told me your name and field of study earlier in this chat, I am able to \"remember\" that information for the duration of this session, but I cannot retrieve anything from past sessions.\n\nIs there anything else I can help you with today, Karthik?"
   }
 ]

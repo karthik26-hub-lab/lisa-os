@@ -2,6 +2,29 @@ import subprocess
 import webbrowser
 import psutil
 import os
+from PIL import ImageGrab
+from google import genai
+
+def analyze_screen(query: str) -> str:
+    """
+    Takes an instant screenshot of the user's desktop and uses Gemini Multimodal Vision to answer the query.
+    """
+    try:
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            return "Error: GEMINI_API_KEY is missing."
+            
+        # Take a screenshot of all monitors
+        img = ImageGrab.grab(all_screens=True).convert("RGB")
+        
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model='gemini-3.1-flash',
+            contents=[f"Look at this screenshot of my screen and answer: {query}", img]
+        )
+        return response.text
+    except Exception as e:
+        return f"Failed to analyze screen. Error: {str(e)}"
 
 def open_application(app_name: str) -> str:
     """

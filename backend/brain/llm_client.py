@@ -2,13 +2,13 @@ import os
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
-from .tools import open_application, open_website, get_system_info
+from .tools import open_application, open_website, get_system_info, analyze_screen
 from datetime import datetime
 
 load_dotenv()
 
 # Expose these functions to Gemini
-TOOL_FUNCTIONS = [open_application, open_website, get_system_info]
+TOOL_FUNCTIONS = [open_application, open_website, get_system_info, analyze_screen]
 
 import json
 
@@ -90,6 +90,8 @@ def generate_cloud_response(prompt: str) -> str:
                         res = open_website(**args)
                     elif name == "get_system_info":
                         res = get_system_info()
+                    elif name == "analyze_screen":
+                        res = analyze_screen(**args)
                     else:
                         res = f"Tool {name} not found."
                 except Exception as e:
