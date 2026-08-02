@@ -63,6 +63,10 @@ function App() {
         (window as any).initialTranscriptText = ""; // clear after seeding
         
         if (silenceTimer) clearTimeout(silenceTimer);
+        silenceTimer = setTimeout(() => {
+            console.log("3 seconds of silence detected from start. Auto-sending...");
+            if (recognition.current) recognition.current.stop();
+        }, 3000);
       };
 
       recognition.current.onresult = (event: any) => {
