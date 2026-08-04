@@ -142,7 +142,16 @@ function App() {
                 
                 // Try to find a female voice
                 const voices = window.speechSynthesis.getVoices();
-                const femaleVoice = voices.find(v => v.name.includes("Zira") || v.name.includes("Female") || v.name.includes("Google UK English Female"));
+                let femaleVoice = voices.find(v => {
+                  const name = v.name.toLowerCase();
+                  return name.includes("zira") || name.includes("female") || name.includes("samantha") || name.includes("victoria") || name.includes("hazel") || name.includes("susan") || name.includes("catherine");
+                });
+                
+                // Fallback to first available voice if no specific female voice found
+                if (!femaleVoice && voices.length > 0) {
+                   femaleVoice = voices[0];
+                }
+                
                 if (femaleVoice) {
                   utterance.voice = femaleVoice;
                 }

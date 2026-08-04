@@ -1,8 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as PIXI from 'pixi.js';
-import { Live2DModel } from 'pixi-live2d-display';
 
-// Expose PIXI to window so the Live2D plugin can hook into it
+// We must set window.PIXI BEFORE importing pixi-live2d-display
 (window as any).PIXI = PIXI;
 
 interface Live2DViewerProps {
@@ -31,6 +30,9 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
 
     const loadModel = async () => {
       try {
+        // Dynamically import to ensure window.PIXI is ready
+        const { Live2DModel } = await import('pixi-live2d-display');
+        
         // Use the open source Shizuku model
         const modelUrl = "https://cdn.jsdelivr.net/gh/guansss/pixi-live2d-display/test/assets/shizuku/shizuku.model.json";
         
@@ -112,5 +114,9 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
     };
   }, [isSpeaking]);
 
-  return <div ref={containerRef} className="live2d-container" style={{ width: 400, height: 400, margin: '0 auto', display: 'flex', justifyContent: 'center' }} />;
+  return (
+    <div className="live2d-container" style={{ width: 400, height: 400, margin: '0 auto', display: 'flex', justifyContent: 'center', position: 'relative' }}>
+      <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+    </div>
+  );
 }
