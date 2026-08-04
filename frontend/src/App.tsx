@@ -313,6 +313,7 @@ function App() {
   }, [language]);
 
   const handleOrbClick = () => {
+    setShowText(true);
     if (isListening) {
       mainRec.current?.stop(); // This will trigger onend, send msg, and go to passive
     } else {
@@ -343,6 +344,7 @@ function App() {
           console.log("Ctrl+Shift+L pressed");
           try {
             if (!isListeningRef.current) {
+              setShowText(true);
               setIsListening(true);
               transcriptRef.current = "";
               const win = getCurrentWindow();
