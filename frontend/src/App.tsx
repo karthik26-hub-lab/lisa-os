@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import "./App.css";
+import avatarImg from './assets/avatar.jpg';
 
 // Global interface for Web Speech API
 declare global {
@@ -12,12 +13,79 @@ declare global {
 type Message = { role: 'user' | 'ai', content: string };
 type Session = { title: string, messages: { role: string, text: string }[] };
 
+// Siri-style Audio Cues using pure Web Audio API
+const playWakeSound = () => {
+  try {
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const playNote = (freq: number, time: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      
+      gain.gain.setValueAtTime(0, ctx.currentTime + time);
+      gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + time + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + time + 0.3);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + time);
+      osc.stop(ctx.currentTime + time + 0.3);
+    };
+    // Siri Wake: E5 then G#5
+    playNote(659.25, 0);    
+    playNote(830.61, 0.15); 
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+const playStopSound = () => {
+  try {
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const playNote = (freq: number, time: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      
+      gain.gain.setValueAtTime(0, ctx.currentTime + time);
+      gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + time + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + time + 0.3);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + time);
+      osc.stop(ctx.currentTime + time + 0.3);
+    };
+    // Siri Stop: E5 then C5
+    playNote(659.25, 0);    
+    playNote(523.25, 0.15); 
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 function App() {
   const [status, setStatus] = useState("disconnected");
   const [isListening, setIsListening] = useState(false);
   const isListeningRef = useRef(false);
+  const previousIsListening = useRef(false);
+  
   useEffect(() => {
     isListeningRef.current = isListening;
+    
+    // Play Siri Audio Cues
+    if (isListening && !previousIsListening.current) {
+        playWakeSound();
+    } else if (!isListening && previousIsListening.current) {
+        playStopSound();
+    }
+    previousIsListening.current = isListening;
   }, [isListening]);
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -36,62 +104,12 @@ function App() {
   const mainRec = useRef<any>(null);
   const silenceTimer = useRef<any>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | null>(null);
   
   const transcriptRef = useRef<string>("");
   const residualRef = useRef<string>("");
 
-  // Particle Canvas Engine
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let time = 0;
-    
-    const render = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      const width = canvas.width;
-      const height = canvas.height;
-      const centerY = height / 2;
-      
-      const amplitude = isListeningRef.current ? 40 : 15;
-      const speed = isListeningRef.current ? 0.08 : 0.02;
-      
-      time += speed;
-
-      // Draw 3 layers of sine waves
-      for (let j = 0; j < 3; j++) {
-        const offset = j * Math.PI * 0.6; 
-        
-        for (let i = 0; i < width; i += 4) { 
-          const x = i;
-          const taper = Math.sin(x * Math.PI / width);
-          const y = centerY + Math.sin(x * 0.03 + time + offset) * amplitude * taper;
-          
-          const ratio = x / width;
-          const r = Math.floor(255 * (1 - ratio)); 
-          const g = Math.floor(200 * ratio);       
-          const b = 255;                           
-          
-          ctx.beginPath();
-          ctx.arc(x, y, 1.5, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${0.8 - j * 0.2})`;
-          ctx.fill();
-        }
-      }
-      
-      animationRef.current = requestAnimationFrame(render);
-    };
-    
-    render();
-    
-    return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    };
-  }, []);
+  // Particle Canvas Engine removed
 
   // Initialize WebSocket
   useEffect(() => {
@@ -140,15 +158,7 @@ function App() {
 
     mainRec.current.onstart = () => {
       console.log("Main rec started.");
-      setIsListening(true);
-      
-      transcriptRef.current = residualRef.current;
-      residualRef.current = "";
-      
-      if (silenceTimer.current) clearTimeout(silenceTimer.current);
-      silenceTimer.current = setTimeout(() => {
-        if (mainRec.current) mainRec.current.stop();
-      }, 3000);
+      // We do NOT set isListening to true here, because it starts in passive mode!
     };
 
     mainRec.current.onresult = (event: any) => {
@@ -157,6 +167,42 @@ function App() {
          liveText += event.results[i][0].transcript;
       }
       
+      const lowerText = liveText.toLowerCase();
+
+      // --- PASSIVE WAKE WORD MODE ---
+      if (!isListeningRef.current) {
+         if (lowerText.includes("lisa")) {
+             console.log("Wake word detected!");
+             setIsListening(true);
+             
+             // Extract whatever was said after "lisa"
+             const parts = lowerText.split("lisa");
+             const afterLisa = parts.slice(1).join("lisa").trim();
+             
+             // We use the original case from liveText if possible, but lowerText is fine for the AI
+             transcriptRef.current = afterLisa; 
+             
+             import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+                 const win = getCurrentWindow();
+                 win.show();
+                 win.setFocus();
+             });
+             
+             if (silenceTimer.current) clearTimeout(silenceTimer.current);
+             silenceTimer.current = setTimeout(() => {
+               if (mainRec.current) mainRec.current.stop();
+             }, 3000);
+         } else {
+             // If they are talking but didn't say lisa, stop and restart after silence to clear memory
+             if (silenceTimer.current) clearTimeout(silenceTimer.current);
+             silenceTimer.current = setTimeout(() => {
+               if (mainRec.current) mainRec.current.stop();
+             }, 1500);
+         }
+         return;
+      }
+
+      // --- ACTIVE DICTATION MODE ---
       if (residualRef.current) {
           transcriptRef.current = residualRef.current + " " + liveText;
       } else {
@@ -171,43 +217,60 @@ function App() {
 
     mainRec.current.onerror = (event: any) => {
       console.error("Main rec error:", event.error);
-      setIsListening(false);
+      if (event.error === 'not-allowed') {
+        setIsListening(false);
+      }
     };
 
     mainRec.current.onend = () => {
       console.log("Main rec ended.");
-      setIsListening(false);
-      if (silenceTimer.current) clearTimeout(silenceTimer.current);
       
-      const finalStr = transcriptRef.current.trim();
-      if (finalStr) {
-        setMessages((prev) => [...prev, { role: 'user', content: finalStr }]);
-        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-          ws.current.send(finalStr);
-        }
+      // If we were actively listening, process the command
+      if (isListeningRef.current) {
+          setIsListening(false);
+          if (silenceTimer.current) clearTimeout(silenceTimer.current);
+          
+          const finalStr = transcriptRef.current.trim();
+          if (finalStr) {
+            setMessages((prev) => [...prev, { role: 'user', content: finalStr }]);
+            if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+              ws.current.send(finalStr);
+            }
+          }
       }
+      
       transcriptRef.current = "";
       residualRef.current = "";
+      
+      // Always restart for passive wake word listening
+      try { mainRec.current.start(); } catch(e) {}
     };
 
+    // Kickoff the initial passive listener
+    try { mainRec.current.start(); } catch(e) {}
+
     return () => {
-      if (mainRec.current) mainRec.current.stop();
+      if (mainRec.current) {
+         mainRec.current.onend = null; // prevent auto-restart on unmount
+         mainRec.current.stop();
+      }
     };
   }, []);
 
   useEffect(() => {
     if (mainRec.current) {
       mainRec.current.lang = language;
+      try { mainRec.current.stop(); } catch(e) {} // Will auto restart with new lang via onend
     }
   }, [language]);
 
   const handleOrbClick = () => {
     if (isListening) {
-      mainRec.current?.stop();
+      mainRec.current?.stop(); // This will trigger onend, send msg, and go to passive
     } else {
+      setIsListening(true);
       residualRef.current = "";
       transcriptRef.current = "";
-      try { mainRec.current?.start(); } catch(e) { console.error(e); }
     }
   };
 
@@ -231,11 +294,12 @@ function App() {
         register('CommandOrControl+Shift+L', async () => {
           console.log("Ctrl+Shift+L pressed");
           try {
-            if (!isListening) {
+            if (!isListeningRef.current) {
+              setIsListening(true);
+              transcriptRef.current = "";
               const win = getCurrentWindow();
               await win.show();
               await win.setFocus();
-              mainRec.current?.start();
             }
           } catch (e) {
             console.error(e);
@@ -243,7 +307,7 @@ function App() {
         }).catch(e => console.error("Global shortcut Ctrl+Shift+L error", e));
       });
     });
-  }, [isListening]);
+  }, []);
 
   const fetchHistory = async () => {
     try {
@@ -304,11 +368,11 @@ function App() {
       <div className={`lisa-container ${showHistory ? 'with-sidebar' : ''}`} data-tauri-drag-region>
         
         <div 
-          className="siri-orb"
+          className={`lisa-avatar-container ${status === 'connected' ? 'active' : 'inactive'} ${isListening ? 'listening' : ''}`} 
           onClick={handleOrbClick} 
           data-tauri-drag-region
         >
-          <canvas ref={canvasRef} width={240} height={240} />
+          <img src={avatarImg} alt="LISA Avatar" className="lisa-avatar" />
         </div>
         
         {showText && (
@@ -349,7 +413,7 @@ function App() {
             ))}
           </div>
         ) : (
-          showText && messages.length > 0 && (
+          messages.length > 0 && (
             <div className="message-log" data-tauri-drag-region>
               {messages.map((msg, i) => (
                 <div key={i} className={`message ${msg.role === 'user' ? 'user-msg' : 'ai-msg'}`}>

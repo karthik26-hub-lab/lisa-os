@@ -28,65 +28,70 @@ body {
   background-color: transparent;
 }
 
-/* The 8K Ultra Pro Orb - Glass Sphere */
-.siri-orb {
+/* Avatar Styling */
+.lisa-avatar-container {
   position: relative;
-  width: 120px; /* Slightly larger to see the 3D particles better */
-  height: 120px;
+  width: 140px; 
+  height: 140px;
   border-radius: 50%;
-  
-  /* Deep dark glass background */
-  background: radial-gradient(circle at 50% 20%, rgba(20, 20, 25, 0.4) 0%, rgba(5, 5, 10, 0.9) 60%, rgba(0, 0, 0, 1) 100%);
-  
-  /* Inner shadow to give it 3D spherical volume */
-  box-shadow: 
-    inset 0 -20px 30px rgba(0, 0, 0, 0.9),
-    inset 0 10px 20px rgba(255, 255, 255, 0.15),
-    inset -10px -10px 30px rgba(0, 0, 0, 0.5),
-    0 15px 35px rgba(0, 0, 0, 0.8); /* Slight drop shadow on the background */
-    
-  /* A sharp, clean glass rim */
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
   margin-bottom: 20px;
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  overflow: hidden; /* Ensure canvas doesn't bleed out */
+  /* The idle breathing animation */
+  animation: idle-float 3s infinite ease-in-out;
 }
 
-/* Specular Highlight (The white reflection at the top of the glass sphere) */
-.siri-orb::after {
-  content: '';
-  position: absolute;
-  top: 5%;
-  left: 15%;
-  width: 70%;
-  height: 30%;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at top, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 70%);
-  pointer-events: none; /* Don't block clicks */
-}
-
-.siri-orb:hover {
-  transform: scale(1.05);
-}
-
-.siri-orb.inactive {
-  filter: grayscale(100%) opacity(0.5);
-}
-
-/* The Canvas inside the orb */
-.siri-orb canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
+.lisa-avatar {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  z-index: -1;
+  object-fit: cover;
+  image-rendering: pixelated;
+  /* Retro pixel art border */
+  border: 4px solid #fff;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.lisa-avatar-container:hover {
+  transform: scale(1.05);
+}
+
+.lisa-avatar-container.inactive {
+  filter: grayscale(80%) opacity(0.8);
+}
+
+/* Audio Reactive State */
+.lisa-avatar-container.listening {
+  /* Fast bounce to show she is alert */
+  animation: bounce-alert 1.5s infinite alternate ease-in-out;
+}
+
+.lisa-avatar-container.listening .lisa-avatar {
+  border-color: #ffaaee;
+  box-shadow: 0 0 25px #ff55dd, 0 0 50px #00aaff;
+}
+
+/* Keyframes */
+@keyframes idle-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes bounce-alert {
+  0% {
+    transform: scale(1) translateY(0px);
+  }
+  100% {
+    transform: scale(1.05) translateY(-5px);
+  }
 }
 
 /* Status Text */

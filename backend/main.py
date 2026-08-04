@@ -119,6 +119,48 @@ async def websocket_endpoint(websocket: WebSocket):
                 tts_queue.put("I have closed the history panel.")
                 continue
 
+            # Fast Read Intercept (Read selected text or screen)
+            if lower_data in ["read", "speak", "sollu", "vaasi", "read it", "padichi kaatu"]:
+                import pyautogui
+                import time
+                import subprocess
+                from brain.tools import analyze_screen
+                
+                # Clear clipboard first
+                subprocess.run(['powershell', '-command', 'Set-Clipboard -Value $null'])
+                
+                # Try to copy selected text
+                pyautogui.hotkey('ctrl', 'c')
+                time.sleep(0.1) # Wait for clipboard to populate
+                
+                try:
+                    selected_text = subprocess.check_output(['powershell', '-command', 'Get-Clipboard'], text=True, stderr=subprocess.DEVNULL).strip()
+                except:
+                    selected_text = ""
+                    
+                if selected_text:
+                    await manager.send_personal_message(json.dumps({"type": "message", "content": f"*Reading selection:* {selected_text}"}), websocket)
+                    tts_queue.put(selected_text)
+                else:
+                    await manager.send_personal_message(json.dumps({"type": "message", "content": "Scanning screen for text..."}), websocket)
+                    tts_queue.put("Scanning screen for text.")
+                    
+                    # Run vision fallback in a separate thread so we don't block the websocket
+                    def vision_read_worker(ws_manager, ws, t_queue):
+                        import asyncio
+                        try:
+                            result = analyze_screen("Please read the main text visible on the screen. Do not describe the screen or UI elements, just extract and read the main content aloud as if you are a screen reader.")
+                            # Send result back via an event loop
+                            loop = asyncio.new_event_loop()
+                            asyncio.set_event_loop(loop)
+                            loop.run_until_complete(ws_manager.send_personal_message(json.dumps({"type": "message", "content": f"*Screen Text:* {result}"}), ws))
+                            t_queue.put(result)
+                        except Exception as e:
+                            print("Vision read failed:", e)
+                            
+                    threading.Thread(target=vision_read_worker, args=(manager, websocket, tts_queue), daemon=True).start()
+                continue
+
             # Send immediate acknowledgement for normal queries
             await manager.send_personal_message(json.dumps({"type": "message", "content": "Thinking..."}), websocket)
             
