@@ -62,7 +62,7 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
         model.anchor.set(0.5, 0.5);
         
         // Make the model follow the mouse
-        const canvasView = appRef.current.view as unknown as HTMLCanvasElement;
+        const canvasView = app.view as unknown as HTMLCanvasElement;
         canvasView.addEventListener('pointermove', (e: any) => {
             const rect = canvasView.getBoundingClientRect();
             // Convert to clip space (-1 to 1) for focus
