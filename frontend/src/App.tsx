@@ -107,6 +107,7 @@ function App() {
   
   const [historyData, setHistoryData] = useState<Record<string, Session>>({});
   const [activeSession, setActiveSession] = useState<string | null>(null);
+  const [micError, setMicError] = useState<string | null>(null);
   
   const ws = useRef<WebSocket | null>(null);
   
@@ -262,6 +263,7 @@ function App() {
 
     mainRec.current.onerror = (event: any) => {
       console.error("Main rec error:", event.error);
+      setMicError(`Mic Error: ${event.error}`);
       if (event.error === 'not-allowed') {
         setIsListening(false);
       }
@@ -429,6 +431,7 @@ function App() {
           <>
             <div className="status-text" data-tauri-drag-region>
               {isListening ? "Listening..." : (status === "connected" ? "LISA Online" : "Connecting...")}
+              {micError && <span style={{color: 'red', marginLeft: '10px'}}>{micError}</span>}
               <button className="history-btn" onClick={() => setLanguage(l => l === 'en-US' ? 'ta-IN' : 'en-US')}>
                  {language === 'en-US' ? "EN" : "TA"}
               </button>
