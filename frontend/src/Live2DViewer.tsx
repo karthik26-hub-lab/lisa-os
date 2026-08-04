@@ -43,9 +43,15 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
         const modelUrl = "https://cdn.jsdelivr.net/gh/guansss/pixi-live2d-display/test/assets/shizuku/shizuku.model.json";
         
         const model = await Live2DModel.from(modelUrl, { autoInteract: false });
-        modelRef.current = model;
         
-        app.stage.addChild(model);
+        // Check if component unmounted while downloading
+        if (!appRef.current || !appRef.current.stage) {
+          model.destroy();
+          return;
+        }
+        
+        modelRef.current = model;
+        appRef.current.stage.addChild(model);
         
         // Scale and position the model
         model.scale.set(0.3); // Adjust scale for Shizuku
@@ -54,7 +60,7 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
         model.anchor.set(0.5, 0.5);
         
         // Make the model follow the mouse
-        const canvasView = app.view as unknown as HTMLCanvasElement;
+        const canvasView = appRef.current.view as unknown as HTMLCanvasElement;
         canvasView.addEventListener('pointermove', (e: any) => {
             const rect = canvasView.getBoundingClientRect();
             // Convert to clip space (-1 to 1) for focus
@@ -65,6 +71,9 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
         
         setLoadStatus("success");
       } catch (err: any) {
+        // Ignore errors if component unmounted
+        if (!appRef.current) return;
+        
         console.error("Failed to load Live2D model:", err);
         setLoadStatus("error");
         setErrorMsg(err.message || String(err));
@@ -74,8 +83,10 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
     loadModel();
 
     return () => {
+      // Clean up on unmount
       if (appRef.current) {
         appRef.current.destroy(true, { children: true });
+        appRef.current = null;
       }
     };
   }, []);
