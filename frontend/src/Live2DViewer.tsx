@@ -41,8 +41,8 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
         // Register Ticker for Live2D (Required for some versions)
         Live2DModel.registerTicker(PIXI.Ticker);
         
-        // Use the Hatsune Miku model for a bold and cute vibe
-        const modelUrl = "https://cdn.jsdelivr.net/npm/live2d-widget-model-miku@1.0.5/assets/miku.model.json";
+        // Use the Chitose model (dark grey/black uniform, bold/smug vibe)
+        const modelUrl = "https://cdn.jsdelivr.net/npm/live2d-widget-model-chitose@1.0.5/assets/chitose.model.json";
         
         const model = await Live2DModel.from(modelUrl, { autoInteract: false });
         
@@ -56,7 +56,7 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
         app.stage.addChild(model);
         
         // Scale and position the model
-        model.scale.set(0.35); // Adjusted scale for Miku
+        model.scale.set(0.15); // Adjusted scale for Chitose
         model.x = app.view.width / 2;
         model.y = app.view.height / 2 + 100; // Shift down slightly
         model.anchor.set(0.5, 0.5);
