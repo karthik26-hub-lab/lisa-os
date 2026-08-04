@@ -74,7 +74,7 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
         setLoadStatus("success");
       } catch (err: any) {
         // Ignore errors if component unmounted
-        if (!appRef.current) return;
+        if (isUnmounted) return;
         
         console.error("Failed to load Live2D model:", err);
         setLoadStatus("error");
