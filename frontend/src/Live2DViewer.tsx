@@ -41,8 +41,8 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
         // Register Ticker for Live2D (Required for some versions)
         Live2DModel.registerTicker(PIXI.Ticker);
         
-        // Use the Chitose model (dark grey/black uniform, bold/smug vibe)
-        const modelUrl = "https://cdn.jsdelivr.net/npm/live2d-widget-model-chitose@1.0.5/assets/chitose.model.json";
+        // Use the Hibiki model (Dark blue/black uniform, definitely female, mature/calm vibe)
+        const modelUrl = "https://cdn.jsdelivr.net/npm/live2d-widget-model-hibiki@1.0.5/assets/hibiki.model.json";
         
         const model = await Live2DModel.from(modelUrl, { autoInteract: false });
         
