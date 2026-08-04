@@ -41,8 +41,8 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
         // Register Ticker for Live2D (Required for some versions)
         Live2DModel.registerTicker(PIXI.Ticker);
         
-        // Use the open source Shizuku model
-        const modelUrl = "https://cdn.jsdelivr.net/gh/guansss/pixi-live2d-display/test/assets/shizuku/shizuku.model.json";
+        // Use the mature 'Haru' model which fits the "professor" vibe better
+        const modelUrl = "https://cdn.jsdelivr.net/gh/guansss/pixi-live2d-display/test/assets/haru/haru_greeter_t03.model3.json";
         
         const model = await Live2DModel.from(modelUrl, { autoInteract: false });
         
@@ -56,7 +56,7 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
         app.stage.addChild(model);
         
         // Scale and position the model
-        model.scale.set(0.3); // Adjust scale for Shizuku
+        model.scale.set(0.15); // Adjust scale for Haru
         model.x = app.view.width / 2;
         model.y = app.view.height / 2 + 100; // Shift down slightly
         model.anchor.set(0.5, 0.5);
