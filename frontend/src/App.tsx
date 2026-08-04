@@ -193,6 +193,7 @@ function App() {
   useEffect(() => {
     if (!('webkitSpeechRecognition' in window)) {
       console.warn("Speech Recognition API not supported.");
+      setMicError("Mic Error: API Not Supported in this environment");
       return;
     }
 
