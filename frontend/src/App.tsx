@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import "./App.css";
-import avatarImg from './assets/avatar.jpg';
+import avatarIdleImg from './assets/avatar_idle.png';
+import avatarSpeakingImg from './assets/avatar_speaking.png';
 
 // Global interface for Web Speech API
 declare global {
@@ -73,6 +74,7 @@ const playStopSound = () => {
 function App() {
   const [status, setStatus] = useState("disconnected");
   const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const isListeningRef = useRef(false);
   const previousIsListening = useRef(false);
   
@@ -119,26 +121,30 @@ function App() {
     ws.current.onerror = (error) => console.error("WebSocket error:", error);
     
     ws.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === "ui_action") {
-        if (data.action === "show_text") setShowText(true);
-        if (data.action === "hide_text") setShowText(false);
-        if (data.action === "show_history") {
-          setShowHistory(true);
-          fetchHistory();
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'ui_action') {
+            if (data.action === 'show_text') setShowText(true);
+            if (data.action === 'hide_text') setShowText(false);
+            if (data.action === 'show_history') setShowHistory(true);
+            if (data.action === 'hide_history') setShowHistory(false);
+            if (data.action === 'speaking_start') setIsSpeaking(true);
+            if (data.action === 'speaking_stop') setIsSpeaking(false);
+          } else if (data.type === 'message') {
+            if (data.content === "Thinking...") {
+              setMessages((prev) => [...prev, { role: 'ai', content: data.content }]);
+            } else {
+              setMessages((prev) => {
+                const filtered = prev.filter(msg => msg.content !== "Thinking...");
+                return [...filtered, { role: 'ai', content: data.content }];
+              });
+            }
+            setStatus("connected");
+          }
+        } catch (e) {
+          console.error(e);
         }
-        if (data.action === "hide_history") setShowHistory(false);
-      } else if (data.type === "message") {
-        if (data.content === "Thinking...") {
-          setMessages((prev) => [...prev, { role: 'ai', content: data.content }]);
-        } else {
-          setMessages((prev) => {
-            const filtered = prev.filter(msg => msg.content !== "Thinking...");
-            return [...filtered, { role: 'ai', content: data.content }];
-          });
-        }
-      }
-    };
+      };
     
     return () => ws.current?.close();
   }, []);
@@ -372,7 +378,12 @@ function App() {
           onClick={handleOrbClick} 
           data-tauri-drag-region
         >
-          <img src={avatarImg} alt="LISA Avatar" className="lisa-avatar" />
+          {isListening && (
+            <div className="typing-bubble">
+              <span>.</span><span>.</span><span>.</span>
+            </div>
+          )}
+          <img src={isSpeaking ? avatarSpeakingImg : avatarIdleImg} alt="LISA Avatar" className="lisa-avatar" />
         </div>
         
         {showText && (

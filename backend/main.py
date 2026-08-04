@@ -20,10 +20,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+import asyncio
+
+main_loop = None
+
+@app.on_event("startup")
+async def startup_event():
+    global main_loop
+    main_loop = asyncio.get_running_loop()
+
 # TTS Worker Thread (Avoids blocking FastAPI)
 tts_queue = queue.Queue()
 
-def tts_worker():
+def tts_worker(manager):
     engine = pyttsx3.init()
     # Configure Voice (Try to find a female voice like Zira)
     voices = engine.getProperty('voices')
@@ -42,11 +51,18 @@ def tts_worker():
             break
         # Clean markdown symbols for cleaner speech
         clean_text = re.sub(r'[*#`_]', '', text)
+        
+        global main_loop
+        if main_loop and main_loop.is_running():
+            asyncio.run_coroutine_threadsafe(manager.broadcast(json.dumps({"type": "ui_action", "action": "speaking_start"})), main_loop)
+            
         engine.say(clean_text)
         engine.runAndWait()
+        
+        if main_loop and main_loop.is_running():
+            asyncio.run_coroutine_threadsafe(manager.broadcast(json.dumps({"type": "ui_action", "action": "speaking_stop"})), main_loop)
+            
         tts_queue.task_done()
-
-threading.Thread(target=tts_worker, daemon=True).start()
 
 class ConnectionManager:
     def __init__(self):
@@ -70,6 +86,10 @@ class ConnectionManager:
             await connection.send_text(message)
 
 manager = ConnectionManager()
+
+# Start TTS worker with manager
+import threading
+threading.Thread(target=tts_worker, args=(manager,), daemon=True).start()
 
 @app.websocket("/ws/lisa")
 async def websocket_endpoint(websocket: WebSocket):
