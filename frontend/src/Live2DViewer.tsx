@@ -19,6 +19,8 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
 
   useEffect(() => {
     if (!containerRef.current) return;
+    
+    let isUnmounted = false;
 
     // Initialize Pixi Application
     const app = new PIXI.Application({
@@ -45,13 +47,13 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
         const model = await Live2DModel.from(modelUrl, { autoInteract: false });
         
         // Check if component unmounted while downloading
-        if (!appRef.current || !appRef.current.stage) {
+        if (isUnmounted || !app.stage) {
           model.destroy();
           return;
         }
         
         modelRef.current = model;
-        appRef.current.stage.addChild(model);
+        app.stage.addChild(model);
         
         // Scale and position the model
         model.scale.set(0.3); // Adjust scale for Shizuku
@@ -83,6 +85,7 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
     loadModel();
 
     return () => {
+      isUnmounted = true;
       // Clean up on unmount
       if (appRef.current) {
         appRef.current.destroy(true, { children: true });
