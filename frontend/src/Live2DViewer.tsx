@@ -56,9 +56,9 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
         app.stage.addChild(model);
         
         // Scale and position the model
-        model.scale.set(0.7); // Adjust scale for Miku
+        model.scale.set(0.12); // Much smaller scale so her head fits in the 400x400 canvas
         model.x = app.view.width / 2;
-        model.y = app.view.height / 2 + 50; // Shift down slightly
+        model.y = app.view.height / 2 + 150; // Shift down to show her upper body properly
         model.anchor.set(0.5, 0.5);
         
         // Make the model follow the mouse
