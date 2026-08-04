@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as PIXI from 'pixi.js';
 
 // We must set window.PIXI BEFORE importing pixi-live2d-display
@@ -13,6 +13,9 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
   const appRef = useRef<PIXI.Application | null>(null);
   const modelRef = useRef<any>(null);
   const tickerRef = useRef<PIXI.Ticker | null>(null);
+  
+  const [loadStatus, setLoadStatus] = useState<"loading" | "success" | "error">("loading");
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -33,10 +36,13 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
         // Dynamically import to ensure window.PIXI is ready
         const { Live2DModel } = await import('pixi-live2d-display');
         
+        // Register Ticker for Live2D (Required for some versions)
+        Live2DModel.registerTicker(PIXI.Ticker);
+        
         // Use the open source Shizuku model
         const modelUrl = "https://cdn.jsdelivr.net/gh/guansss/pixi-live2d-display/test/assets/shizuku/shizuku.model.json";
         
-        const model = await Live2DModel.from(modelUrl);
+        const model = await Live2DModel.from(modelUrl, { autoInteract: false });
         modelRef.current = model;
         
         app.stage.addChild(model);
@@ -50,14 +56,18 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
         // Make the model follow the mouse
         const canvasView = app.view as unknown as HTMLCanvasElement;
         canvasView.addEventListener('pointermove', (e: any) => {
-            const rect = (app.view as HTMLCanvasElement).getBoundingClientRect();
+            const rect = canvasView.getBoundingClientRect();
             // Convert to clip space (-1 to 1) for focus
             const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
             const y = ((e.clientY - rect.top) / rect.height) * 2 - 1;
             model.focus(x, y);
         });
-      } catch (err) {
+        
+        setLoadStatus("success");
+      } catch (err: any) {
         console.error("Failed to load Live2D model:", err);
+        setLoadStatus("error");
+        setErrorMsg(err.message || String(err));
       }
     };
 
@@ -116,7 +126,14 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
 
   return (
     <div className="live2d-container" style={{ width: 400, height: 400, margin: '0 auto', display: 'flex', justifyContent: 'center', position: 'relative' }}>
-      <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+      {loadStatus === "loading" && <div style={{ position: 'absolute', top: '50%', color: 'cyan', fontFamily: 'monospace' }}>Initializing Avatar...</div>}
+      {loadStatus === "error" && (
+        <div style={{ position: 'absolute', top: '40%', color: '#ff4444', fontFamily: 'monospace', textAlign: 'center', padding: '0 20px' }}>
+          <div>Failed to load Avatar</div>
+          <div style={{ fontSize: '10px', marginTop: '10px', opacity: 0.8 }}>{errorMsg}</div>
+        </div>
+      )}
+      <div ref={containerRef} style={{ width: '100%', height: '100%', opacity: loadStatus === 'success' ? 1 : 0, transition: 'opacity 0.5s' }} />
     </div>
   );
 }
