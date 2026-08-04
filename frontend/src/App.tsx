@@ -13,7 +13,6 @@ declare global {
 type Message = { role: 'user' | 'ai', content: string };
 type Session = { title: string, messages: { role: string, text: string }[] };
 
-// Siri-style Audio Cues using pure Web Audio API
 const playWakeSound = () => {
   try {
     const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
@@ -24,17 +23,14 @@ const playWakeSound = () => {
       const gain = ctx.createGain();
       osc.type = 'sine';
       osc.frequency.value = freq;
-      
       gain.gain.setValueAtTime(0, ctx.currentTime + time);
       gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + time + 0.05);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + time + 0.3);
-      
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start(ctx.currentTime + time);
       osc.stop(ctx.currentTime + time + 0.3);
     };
-    // Siri Wake: E5 then G#5
     playNote(659.25, 0);    
     playNote(830.61, 0.15); 
   } catch (e) {
@@ -52,17 +48,14 @@ const playStopSound = () => {
       const gain = ctx.createGain();
       osc.type = 'sine';
       osc.frequency.value = freq;
-      
       gain.gain.setValueAtTime(0, ctx.currentTime + time);
       gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + time + 0.05);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + time + 0.3);
-      
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start(ctx.currentTime + time);
       osc.stop(ctx.currentTime + time + 0.3);
     };
-    // Siri Stop: E5 then C5
     playNote(659.25, 0);    
     playNote(523.25, 0.15); 
   } catch (e) {
@@ -77,7 +70,22 @@ function App() {
   const isListeningRef = useRef(false);
   const previousIsListening = useRef(false);
   
-  // Preload voices
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [language, setLanguage] = useState("en-US");
+  
+  const [showSettings, setShowSettings] = useState(false);
+  const [settingsTab, setSettingsTab] = useState("history"); // 'history' or 'personalize'
+  const [historyData, setHistoryData] = useState<Record<string, Session>>({});
+  const [activeSession, setActiveSession] = useState<string | null>(null);
+  const [micError, setMicError] = useState<string | null>(null);
+  
+  const ws = useRef<WebSocket | null>(null);
+  const mainRec = useRef<any>(null);
+  const silenceTimer = useRef<any>(null);
+  const transcriptRef = useRef<string>("");
+  const residualRef = useRef<string>("");
+
   useEffect(() => {
     window.speechSynthesis.getVoices();
     window.speechSynthesis.onvoiceschanged = () => {
@@ -87,8 +95,6 @@ function App() {
   
   useEffect(() => {
     isListeningRef.current = isListening;
-    
-    // Play Siri Audio Cues
     if (isListening && !previousIsListening.current) {
         playWakeSound();
     } else if (!isListening && previousIsListening.current) {
@@ -97,29 +103,6 @@ function App() {
     previousIsListening.current = isListening;
   }, [isListening]);
 
-  const [messages, setMessages] = useState<Message[]>([]);
-  
-  // UI Toggles
-  const [showText, setShowText] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
-  const [language, setLanguage] = useState("en-US");
-  const [chatInput, setChatInput] = useState("");
-  
-  const [historyData, setHistoryData] = useState<Record<string, Session>>({});
-  const [activeSession, setActiveSession] = useState<string | null>(null);
-  const [micError, setMicError] = useState<string | null>(null);
-  
-  const ws = useRef<WebSocket | null>(null);
-  
-  const mainRec = useRef<any>(null);
-  const silenceTimer = useRef<any>(null);
-  
-  const transcriptRef = useRef<string>("");
-  const residualRef = useRef<string>("");
-
-  // Particle Canvas Engine removed
-
-  // Initialize WebSocket
   useEffect(() => {
     ws.current = new WebSocket("ws://127.0.0.1:8000/ws/lisa");
     ws.current.onopen = () => setStatus("connected");
@@ -130,10 +113,8 @@ function App() {
         try {
           const data = JSON.parse(event.data);
           if (data.type === 'ui_action') {
-            if (data.action === 'show_text') setShowText(true);
-            if (data.action === 'hide_text') setShowText(false);
-            if (data.action === 'show_history') setShowHistory(true);
-            if (data.action === 'hide_history') setShowHistory(false);
+            if (data.action === 'show_history') setShowSettings(true);
+            if (data.action === 'hide_history') setShowSettings(false);
           } else if (data.type === 'message') {
             if (data.content === "Thinking...") {
               setMessages((prev) => [...prev, { role: 'ai', content: data.content }]);
@@ -143,39 +124,25 @@ function App() {
                 return [...filtered, { role: 'ai', content: data.content }];
               });
               
-              // Browser TTS
               const cleanText = data.content.replace(/[*#`_]/g, '');
               if (cleanText.trim()) {
-                window.speechSynthesis.cancel(); // Stop current speech
+                window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(cleanText);
-                
-                // Try to find a female voice
                 let voices = window.speechSynthesis.getVoices();
-                if (voices.length === 0) {
-                   // Fallback for first load if onvoiceschanged hasn't fired
-                   voices = window.speechSynthesis.getVoices();
-                }
+                if (voices.length === 0) voices = window.speechSynthesis.getVoices();
                 
                 let femaleVoice = voices.find(v => {
                   const name = v.name.toLowerCase();
                   return name.includes("zira") || name.includes("female") || name.includes("samantha") || name.includes("victoria") || name.includes("hazel") || name.includes("susan") || name.includes("catherine");
                 });
                 
-                // Fallback to first available voice if no specific female voice found
-                if (!femaleVoice && voices.length > 0) {
-                   femaleVoice = voices[0];
-                }
-                
-                if (femaleVoice) {
-                  utterance.voice = femaleVoice;
-                }
+                if (!femaleVoice && voices.length > 0) femaleVoice = voices[0];
+                if (femaleVoice) utterance.voice = femaleVoice;
                 
                 utterance.rate = 1.05;
-                
                 utterance.onstart = () => setIsSpeaking(true);
                 utterance.onend = () => setIsSpeaking(false);
                 utterance.onerror = () => setIsSpeaking(false);
-                
                 window.speechSynthesis.speak(utterance);
               }
             }
@@ -189,7 +156,6 @@ function App() {
     return () => ws.current?.close();
   }, []);
 
-  // Initialize Speech Recognition Instances (ONCE)
   useEffect(() => {
     if (!('webkitSpeechRecognition' in window)) {
       console.warn("Speech Recognition API not supported.");
@@ -204,8 +170,7 @@ function App() {
     mainRec.current.lang = language;
 
     mainRec.current.onstart = () => {
-      console.log("Main rec started.");
-      // We do NOT set isListening to true here, because it starts in passive mode!
+      setMicError(null);
     };
 
     mainRec.current.onresult = (event: any) => {
@@ -216,31 +181,23 @@ function App() {
       
       const lowerText = liveText.toLowerCase();
 
-      // --- PASSIVE WAKE WORD MODE ---
       if (!isListeningRef.current) {
          if (lowerText.includes("lisa")) {
-             console.log("Wake word detected!");
              setIsListening(true);
-             
-             // Extract whatever was said after "lisa"
              const parts = lowerText.split("lisa");
-             const afterLisa = parts.slice(1).join("lisa").trim();
-             
-             // We use the original case from liveText if possible, but lowerText is fine for the AI
-             transcriptRef.current = afterLisa; 
+             transcriptRef.current = parts.slice(1).join("lisa").trim(); 
              
              import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
                  const win = getCurrentWindow();
                  win.show();
                  win.setFocus();
-             });
+             }).catch(() => {});
              
              if (silenceTimer.current) clearTimeout(silenceTimer.current);
              silenceTimer.current = setTimeout(() => {
                if (mainRec.current) mainRec.current.stop();
              }, 3000);
          } else {
-             // If they are talking but didn't say lisa, stop and restart after silence to clear memory
              if (silenceTimer.current) clearTimeout(silenceTimer.current);
              silenceTimer.current = setTimeout(() => {
                if (mainRec.current) mainRec.current.stop();
@@ -249,7 +206,6 @@ function App() {
          return;
       }
 
-      // --- ACTIVE DICTATION MODE ---
       if (residualRef.current) {
           transcriptRef.current = residualRef.current + " " + liveText;
       } else {
@@ -271,9 +227,6 @@ function App() {
     };
 
     mainRec.current.onend = () => {
-      console.log("Main rec ended.");
-      
-      // If we were actively listening, process the command
       if (isListeningRef.current) {
           setIsListening(false);
           if (silenceTimer.current) clearTimeout(silenceTimer.current);
@@ -289,17 +242,14 @@ function App() {
       
       transcriptRef.current = "";
       residualRef.current = "";
-      
-      // Always restart for passive wake word listening
       try { mainRec.current.start(); } catch(e) {}
     };
 
-    // Kickoff the initial passive listener
     try { mainRec.current.start(); } catch(e) {}
 
     return () => {
       if (mainRec.current) {
-         mainRec.current.onend = null; // prevent auto-restart on unmount
+         mainRec.current.onend = null;
          mainRec.current.stop();
       }
     };
@@ -308,56 +258,19 @@ function App() {
   useEffect(() => {
     if (mainRec.current) {
       mainRec.current.lang = language;
-      try { mainRec.current.stop(); } catch(e) {} // Will auto restart with new lang via onend
+      try { mainRec.current.stop(); } catch(e) {}
     }
   }, [language]);
 
-  const handleOrbClick = () => {
-    setShowText(true);
+  const toggleMic = () => {
     if (isListening) {
-      mainRec.current?.stop(); // This will trigger onend, send msg, and go to passive
+      mainRec.current?.stop();
     } else {
       setIsListening(true);
       residualRef.current = "";
       transcriptRef.current = "";
     }
   };
-
-  // Register global shortcuts
-  useEffect(() => {
-    import('@tauri-apps/plugin-global-shortcut').then(({ register }) => {
-      import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
-        // Toggle UI Visibility
-        register('Alt+L', async () => {
-          const win = getCurrentWindow();
-          const isVisible = await win.isVisible();
-          if (isVisible) {
-            await win.hide();
-          } else {
-            await win.show();
-            await win.setFocus();
-          }
-        }).catch(e => console.error("Global shortcut error", e));
-
-        // Start listening globally
-        register('CommandOrControl+Shift+L', async () => {
-          console.log("Ctrl+Shift+L pressed");
-          try {
-            if (!isListeningRef.current) {
-              setShowText(true);
-              setIsListening(true);
-              transcriptRef.current = "";
-              const win = getCurrentWindow();
-              await win.show();
-              await win.setFocus();
-            }
-          } catch (e) {
-            console.error(e);
-          }
-        }).catch(e => console.error("Global shortcut Ctrl+Shift+L error", e));
-      });
-    });
-  }, []);
 
   const fetchHistory = async () => {
     try {
@@ -374,11 +287,11 @@ function App() {
     }
   };
 
-  const toggleHistory = () => {
-    if (!showHistory) {
+  const handleSettingsOpen = () => {
+    setShowSettings(true);
+    if (settingsTab === 'history') {
       fetchHistory();
     }
-    setShowHistory(!showHistory);
   };
 
   const handleChatSubmit = (e: React.FormEvent) => {
@@ -390,64 +303,63 @@ function App() {
       ws.current.send(chatInput.trim());
     }
     setChatInput("");
-    setShowText(true);
   };
+  
+  // Auto-scroll chat log
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, activeSession]);
 
   return (
     <div className="lisa-app-wrapper" data-tauri-drag-region>
-      {showHistory && (
-        <div className="sidebar" data-tauri-drag-region>
-          <div className="sidebar-header">
-            <h3>LISA Sessions</h3>
-            <button onClick={() => setShowHistory(false)} className="close-sidebar">✕</button>
-          </div>
-          <div className="session-list">
-            {Object.entries(historyData).reverse().map(([id, session]) => (
-              <div 
-                key={id} 
-                className={`session-item ${activeSession === id ? 'active' : ''}`}
-                onClick={() => setActiveSession(id)}
-              >
-                {session.title || id}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Background Ambience */}
+      <div className="bg-blobs">
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
+        <div className="blob blob-3"></div>
+      </div>
 
-      <div className={`lisa-container ${showHistory ? 'with-sidebar' : ''}`} data-tauri-drag-region>
-        
-        <div 
-          className={`lisa-live2d-container ${status === 'connected' ? 'active' : 'inactive'} ${isListening ? 'listening' : ''}`} 
-          onClick={handleOrbClick} 
-          data-tauri-drag-region
-        >
-          {isListening && (
-            <div className="typing-bubble">
-              <span>.</span><span>.</span><span>.</span>
-            </div>
-          )}
-          <Live2DViewer isSpeaking={isSpeaking} />
+      {/* Top Nav */}
+      <div className="top-nav" data-tauri-drag-region>
+        <div className="greeting">Hello bby!!!!</div>
+        <div className="settings-btn" onClick={handleSettingsOpen}>
+          ⚙️
         </div>
+      </div>
+
+      {/* Main Split Layout */}
+      <div className="main-layout" data-tauri-drag-region>
         
-        {showText && (
-          <>
-            <div className="status-text" data-tauri-drag-region>
-              {isListening ? "Listening..." : (status === "connected" ? "LISA Online" : "Connecting...")}
-              {micError && <span style={{color: 'red', marginLeft: '10px'}}>{micError}</span>}
-              <button className="history-btn" onClick={() => setLanguage(l => l === 'en-US' ? 'ta-IN' : 'en-US')}>
-                 {language === 'en-US' ? "EN" : "TA"}
-              </button>
-              <button className="history-btn" onClick={toggleHistory}>
-                 {showHistory ? "Close History" : "View History"}
-              </button>
-              <button className="history-btn" onClick={() => setShowText(!showText)}>
-                 Hide Text
-              </button>
+        {/* Left Column: Glassmorphic Chat */}
+        <div className="left-column">
+          <div className="chat-glass-container">
+            <div className="status-indicator">
+              <span className={`status-dot ${status !== 'connected' ? 'disconnected' : ''}`}></span>
+              {status === "connected" ? "LISA CONNECTED" : "OFFLINE"}
             </div>
             
-            <div className="input-area" data-tauri-drag-region>
-              <form onSubmit={handleChatSubmit} style={{ width: '100%' }}>
+            {micError && <div style={{color: '#ff3b30', fontSize: '0.9rem', marginBottom: '10px'}}>{micError}</div>}
+
+            <div className="message-log">
+              {messages.length === 0 && <div style={{opacity: 0.5, textAlign: 'center', marginTop: 'auto', marginBottom: 'auto'}}>How can I help you today?</div>}
+              {messages.map((msg, i) => (
+                <div key={i} className={`message ${msg.role === 'user' ? 'user-msg' : 'ai-msg'}`}>
+                   {msg.role === 'user' ? msg.content : <ReactMarkdown>{msg.content}</ReactMarkdown>}
+                </div>
+              ))}
+              <div ref={chatEndRef} />
+            </div>
+
+            <div className="input-area">
+              <button 
+                className={`mic-btn ${isListening ? 'listening' : ''}`}
+                onClick={toggleMic}
+                title="Voice Input"
+              >
+                🎙️
+              </button>
+              <form onSubmit={handleChatSubmit} style={{ flex: 1, display: 'flex' }}>
                 <input 
                   type="text" 
                   className="chat-input" 
@@ -457,29 +369,82 @@ function App() {
                 />
               </form>
             </div>
-          </>
-        )}
-        
-        {showHistory && activeSession && historyData[activeSession] ? (
-          <div className="message-log" data-tauri-drag-region>
-            {historyData[activeSession].messages.map((msg, i) => (
-              <div key={i} className={`message ${msg.role === 'user' ? 'user-msg' : 'ai-msg'}`}>
-                 {msg.role === 'user' ? msg.text : <ReactMarkdown>{msg.text}</ReactMarkdown>}
-              </div>
-            ))}
           </div>
-        ) : (
-          messages.length > 0 && (
-            <div className="message-log" data-tauri-drag-region>
-              {messages.map((msg, i) => (
-                <div key={i} className={`message ${msg.role === 'user' ? 'user-msg' : 'ai-msg'}`}>
-                   {msg.role === 'user' ? msg.content : <ReactMarkdown>{msg.content}</ReactMarkdown>}
-                </div>
-              ))}
-            </div>
-          )
-        )}
+        </div>
+
+        {/* Right Column: Live2D Avatar */}
+        <div className="right-column">
+          <div className="lisa-live2d-container">
+            <Live2DViewer isSpeaking={isSpeaking} />
+          </div>
+        </div>
+        
       </div>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="settings-modal-overlay" onClick={() => setShowSettings(false)}>
+          <div className="settings-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Settings</h2>
+              <button className="close-btn" onClick={() => setShowSettings(false)}>✕</button>
+            </div>
+            
+            <div className="modal-content">
+              <div className="settings-sidebar">
+                <div 
+                  className={`settings-tab ${settingsTab === 'personalize' ? 'active' : ''}`}
+                  onClick={() => setSettingsTab('personalize')}
+                >
+                  ✨ Personalize LISA
+                </div>
+                <div 
+                  className={`settings-tab ${settingsTab === 'history' ? 'active' : ''}`}
+                  onClick={() => { setSettingsTab('history'); fetchHistory(); }}
+                >
+                  📚 Chat History
+                </div>
+              </div>
+              
+              <div className="settings-body">
+                {settingsTab === 'personalize' && (
+                  <div>
+                    <h3>Personalization Options</h3>
+                    <div className="form-group">
+                      <label>Language Recognition</label>
+                      <select 
+                        className="form-select"
+                        value={language}
+                        onChange={(e) => setLanguage(e.target.value)}
+                      >
+                        <option value="en-US">English (US)</option>
+                        <option value="ta-IN">Tamil (India)</option>
+                      </select>
+                    </div>
+                    {/* Add more personalization fields here in the future */}
+                  </div>
+                )}
+                
+                {settingsTab === 'history' && (
+                  <div className="history-list">
+                    {Object.entries(historyData).reverse().length === 0 && <p>No history found.</p>}
+                    {Object.entries(historyData).reverse().map(([id, session]) => (
+                      <div 
+                        key={id} 
+                        className={`history-card ${activeSession === id ? 'active' : ''}`}
+                        onClick={() => { setActiveSession(id); setShowSettings(false); }}
+                      >
+                        <h4>{session.title || id}</h4>
+                        <p>{session.messages.length} messages in this conversation</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
