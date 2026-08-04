@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import "./App.css";
+import avatarIdleImg from './assets/avatar_idle.png';
 
 // Global interface for Web Speech API
 declare global {
@@ -367,7 +368,7 @@ function App() {
       <div className={`lisa-container ${showHistory ? 'with-sidebar' : ''}`} data-tauri-drag-region>
         
         <div 
-          className={`lisa-orb-container ${status === 'connected' ? 'active' : 'inactive'} ${isListening ? 'listening' : ''}`} 
+          className={`lisa-hologram-container ${status === 'connected' ? 'active' : 'inactive'} ${isListening ? 'listening' : ''}`} 
           onClick={handleOrbClick} 
           data-tauri-drag-region
         >
@@ -376,11 +377,9 @@ function App() {
               <span>.</span><span>.</span><span>.</span>
             </div>
           )}
-          <div className="hologram-orb">
-            <div className="orb-core"></div>
-            <div className="orb-ring ring1"></div>
-            <div className="orb-ring ring2"></div>
-            <div className="orb-ring ring3"></div>
+          <div className="hologram-wrapper">
+            <img src={avatarIdleImg} alt="LISA Hologram" className="lisa-hologram-avatar" />
+            <div className="scanlines"></div>
           </div>
         </div>
         
