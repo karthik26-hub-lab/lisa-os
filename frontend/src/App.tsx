@@ -77,6 +77,14 @@ function App() {
   const isListeningRef = useRef(false);
   const previousIsListening = useRef(false);
   
+  // Preload voices
+  useEffect(() => {
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.getVoices();
+    };
+  }, []);
+  
   useEffect(() => {
     isListeningRef.current = isListening;
     
@@ -141,7 +149,12 @@ function App() {
                 const utterance = new SpeechSynthesisUtterance(cleanText);
                 
                 // Try to find a female voice
-                const voices = window.speechSynthesis.getVoices();
+                let voices = window.speechSynthesis.getVoices();
+                if (voices.length === 0) {
+                   // Fallback for first load if onvoiceschanged hasn't fired
+                   voices = window.speechSynthesis.getVoices();
+                }
+                
                 let femaleVoice = voices.find(v => {
                   const name = v.name.toLowerCase();
                   return name.includes("zira") || name.includes("female") || name.includes("samantha") || name.includes("victoria") || name.includes("hazel") || name.includes("susan") || name.includes("catherine");

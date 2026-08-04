@@ -41,8 +41,8 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
         // Register Ticker for Live2D (Required for some versions)
         Live2DModel.registerTicker(PIXI.Ticker);
         
-        // Use the mature 'Haru' model which fits the "professor" vibe better
-        const modelUrl = "https://cdn.jsdelivr.net/gh/guansss/pixi-live2d-display/test/assets/haru/haru_greeter_t03.model3.json";
+        // Use the Hatsune Miku model for a bold and cute vibe
+        const modelUrl = "https://cdn.jsdelivr.net/npm/live2d-widget-model-miku@1.0.5/assets/miku.model.json";
         
         const model = await Live2DModel.from(modelUrl, { autoInteract: false });
         
@@ -56,9 +56,9 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
         app.stage.addChild(model);
         
         // Scale and position the model
-        model.scale.set(0.15); // Adjust scale for Haru
+        model.scale.set(0.7); // Adjust scale for Miku
         model.x = app.view.width / 2;
-        model.y = app.view.height / 2 + 100; // Shift down slightly
+        model.y = app.view.height / 2 + 50; // Shift down slightly
         model.anchor.set(0.5, 0.5);
         
         // Make the model follow the mouse
@@ -115,7 +115,13 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
           }
           
           if (model.internalModel && model.internalModel.coreModel) {
-               model.internalModel.coreModel.setParamFloat('PARAM_MOUTH_OPEN_Y', mouthOpen ? (Math.random() * 0.5 + 0.5) : 0);
+             const core = model.internalModel.coreModel;
+             const val = mouthOpen ? (Math.random() * 0.5 + 0.5) : 0;
+             if (typeof core.setParamFloat === 'function') {
+                 core.setParamFloat('PARAM_MOUTH_OPEN_Y', val);
+             } else if (typeof core.setParameterValueById === 'function') {
+                 core.setParameterValueById('ParamMouthOpenY', val);
+             }
           }
         });
         ticker.start();
@@ -126,7 +132,12 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
          tickerRef.current = null;
        }
        if (model.internalModel && model.internalModel.coreModel) {
-             model.internalModel.coreModel.setParamFloat('PARAM_MOUTH_OPEN_Y', 0);
+             const core = model.internalModel.coreModel;
+             if (typeof core.setParamFloat === 'function') {
+                 core.setParamFloat('PARAM_MOUTH_OPEN_Y', 0);
+             } else if (typeof core.setParameterValueById === 'function') {
+                 core.setParameterValueById('ParamMouthOpenY', 0);
+             }
        }
     }
     
