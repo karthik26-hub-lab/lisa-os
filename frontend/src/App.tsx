@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import "./App.css";
-import avatarIdleImg from './assets/avatar_idle.png';
+import Live2DViewer from "./Live2DViewer";
 
 // Global interface for Web Speech API
 declare global {
@@ -73,6 +73,7 @@ const playStopSound = () => {
 function App() {
   const [status, setStatus] = useState("disconnected");
   const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const isListeningRef = useRef(false);
   const previousIsListening = useRef(false);
   
@@ -132,6 +133,28 @@ function App() {
                 const filtered = prev.filter(msg => msg.content !== "Thinking...");
                 return [...filtered, { role: 'ai', content: data.content }];
               });
+              
+              // Browser TTS
+              const cleanText = data.content.replace(/[*#`_]/g, '');
+              if (cleanText.trim()) {
+                window.speechSynthesis.cancel(); // Stop current speech
+                const utterance = new SpeechSynthesisUtterance(cleanText);
+                
+                // Try to find a female voice
+                const voices = window.speechSynthesis.getVoices();
+                const femaleVoice = voices.find(v => v.name.includes("Zira") || v.name.includes("Female") || v.name.includes("Google UK English Female"));
+                if (femaleVoice) {
+                  utterance.voice = femaleVoice;
+                }
+                
+                utterance.rate = 1.05;
+                
+                utterance.onstart = () => setIsSpeaking(true);
+                utterance.onend = () => setIsSpeaking(false);
+                utterance.onerror = () => setIsSpeaking(false);
+                
+                window.speechSynthesis.speak(utterance);
+              }
             }
             setStatus("connected");
           }
@@ -368,7 +391,7 @@ function App() {
       <div className={`lisa-container ${showHistory ? 'with-sidebar' : ''}`} data-tauri-drag-region>
         
         <div 
-          className={`lisa-hologram-container ${status === 'connected' ? 'active' : 'inactive'} ${isListening ? 'listening' : ''}`} 
+          className={`lisa-live2d-container ${status === 'connected' ? 'active' : 'inactive'} ${isListening ? 'listening' : ''}`} 
           onClick={handleOrbClick} 
           data-tauri-drag-region
         >
@@ -377,10 +400,7 @@ function App() {
               <span>.</span><span>.</span><span>.</span>
             </div>
           )}
-          <div className="hologram-wrapper">
-            <img src={avatarIdleImg} alt="LISA Hologram" className="lisa-hologram-avatar" />
-            <div className="scanlines"></div>
-          </div>
+          <Live2DViewer isSpeaking={isSpeaking} />
         </div>
         
         {showText && (
