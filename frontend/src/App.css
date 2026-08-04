@@ -29,47 +29,90 @@ body {
 }
 
 /* Avatar Styling */
-.lisa-avatar-container {
+.lisa-orb-container {
+  width: 150px;
+  height: 150px;
   position: relative;
-  width: 140px; 
-  height: 140px;
-  border-radius: 50%;
+  cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
-  cursor: pointer;
-  margin-bottom: 20px;
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  /* The idle breathing animation */
+  margin: 0 auto;
+  transition: all 0.3s ease;
   animation: idle-float 3s infinite ease-in-out;
 }
 
-.lisa-avatar {
+.hologram-orb {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  image-rendering: pixelated;
-  transition: all 0.1s ease; /* Faster transition for lip-sync */
-  filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.4));
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  perspective: 1000px;
+  transform-style: preserve-3d;
 }
 
-.lisa-avatar-container:hover {
-  transform: scale(1.05);
+.orb-core {
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle, #00f0ff 20%, #0066ff 80%);
+  border-radius: 50%;
+  box-shadow: 0 0 20px #00f0ff, 0 0 40px #0066ff, inset 0 0 20px #ffffff;
+  animation: core-pulse 2s infinite alternate;
+  z-index: 2;
 }
 
-.lisa-avatar-container.inactive {
-  filter: grayscale(80%) opacity(0.8);
+.orb-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 240, 255, 0.4);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.2), inset 0 0 10px rgba(0, 240, 255, 0.2);
+  transform-style: preserve-3d;
 }
 
-/* Audio Reactive State */
-.lisa-avatar-container.listening {
-  /* Fast bounce to show she is alert */
-  animation: bounce-alert 1.5s infinite alternate ease-in-out;
+.ring1 {
+  width: 120px;
+  height: 120px;
+  animation: spinX 4s linear infinite;
+  border-top: 2px solid #00f0ff;
 }
 
-.lisa-avatar-container.listening .lisa-avatar {
-  filter: drop-shadow(0 0 15px #ff55dd) drop-shadow(0 0 30px #00aaff);
+.ring2 {
+  width: 140px;
+  height: 140px;
+  animation: spinY 5s linear infinite;
+  border-right: 2px solid #ff00ff;
 }
+
+.ring3 {
+  width: 160px;
+  height: 160px;
+  animation: spinZ 6s linear infinite;
+  border-bottom: 2px solid #00f0ff;
+}
+
+.lisa-orb-container:hover .orb-core {
+  box-shadow: 0 0 30px #ff00ff, 0 0 60px #00f0ff;
+}
+
+.lisa-orb-container.inactive {
+  filter: grayscale(100%) opacity(0.5);
+  animation: none;
+}
+
+.lisa-orb-container.listening .orb-core {
+  background: radial-gradient(circle, #ff00ff 20%, #9900ff 80%);
+  box-shadow: 0 0 40px #ff00ff, 0 0 80px #9900ff;
+  animation: core-listen 0.5s infinite alternate;
+}
+.lisa-orb-container.listening .orb-ring {
+  border-color: rgba(255, 0, 255, 0.6);
+}
+.lisa-orb-container.listening .ring1 { border-top-color: #ff00ff; animation-duration: 2s; }
+.lisa-orb-container.listening .ring2 { border-right-color: #00f0ff; animation-duration: 2.5s; }
+.lisa-orb-container.listening .ring3 { border-bottom-color: #ff00ff; animation-duration: 3s; }
+
 
 /* Typing Bubble */
 .typing-bubble {

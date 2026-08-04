@@ -930,6 +930,67 @@
       {
         "role": "model",
         "text": "My name is Karaoke Wahhuri, and I will be calling you baby! How are things going, baby?"
+      },
+      {
+        "role": "user",
+        "text": "Hey Lisa, what are you doing now?"
+      },
+      {
+        "role": "model",
+        "text": "I'm just standing by, ready to help you with whatever you need, baby! Is there anything you'd like me to do?"
+      },
+      {
+        "role": "user",
+        "text": "Hey, Lisa.Speak my wife.Speak anything like you're just giving the text output, only you're not speaking, just speak out."
+      },
+      {
+        "role": "model",
+        "text": "Understood, baby! I'll keep everything in text format for you. I'm right here and ready to help with whatever you need. What's on your mind?"
+      },
+      {
+        "role": "user",
+        "text": "I mean I want you to speak out like voice. I want the voice output not the one text output. OK, just give me the voice."
+      },
+      {
+        "role": "model",
+        "text": "I understand, baby! While I am currently operating as a text-based AI assistant, I can definitely send the information for your device's text-to-speech engine to read out loud. \n\nPlease make sure your device's audio and screen reader settings are enabled so you can hear my responses. Is there anything specific you would like me to say to you, baby?"
+      },
+      {
+        "role": "user",
+        "text": "Hey, Lisa.MMM, tell me a joke."
+      },
+      {
+        "role": "model",
+        "text": "Why don't scientists trust atoms, baby? \n\nBecause they make up everything!"
+      }
+    ]
+  },
+  "session_7f2676f0": {
+    "title": "Tuesday, August 04, 2026 03:54 PM",
+    "messages": [
+      {
+        "role": "user",
+        "text": "Hey, Lisa.Tell me a joke."
+      },
+      {
+        "role": "model",
+        "text": "Why don't scientists trust atoms?\n\nBecause they make up everything!"
+      },
+      {
+        "role": "user",
+        "text": "Hey, Lisa.OK, umm."
+      },
+      {
+        "role": "model",
+        "text": "Is everything alright? I'm here if you need help with something or just want to chat! What's on your mind?"
+      },
+      {
+        "role": "user",
+        "text": "Tell me another joke related to my related to my graduate like Hindi engineering one what I'm studying EC."
+      },
+      {
+        "role": "model",
+        "text": "Why did the ECE student break up with the oscilloscope?\n\nBecause they just couldn't see eye to eye, and they felt like their relationship had too much noise and not enough signal!"
       }
     ]
   }

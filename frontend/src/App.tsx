@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import "./App.css";
-import avatarIdleImg from './assets/avatar_idle.png';
-import avatarSpeakingImg from './assets/avatar_speaking.png';
 
 // Global interface for Web Speech API
 declare global {
@@ -74,7 +72,6 @@ const playStopSound = () => {
 function App() {
   const [status, setStatus] = useState("disconnected");
   const [isListening, setIsListening] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const isListeningRef = useRef(false);
   const previousIsListening = useRef(false);
   
@@ -105,8 +102,6 @@ function App() {
   
   const mainRec = useRef<any>(null);
   const silenceTimer = useRef<any>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number | null>(null);
   
   const transcriptRef = useRef<string>("");
   const residualRef = useRef<string>("");
@@ -128,8 +123,6 @@ function App() {
             if (data.action === 'hide_text') setShowText(false);
             if (data.action === 'show_history') setShowHistory(true);
             if (data.action === 'hide_history') setShowHistory(false);
-            if (data.action === 'speaking_start') setIsSpeaking(true);
-            if (data.action === 'speaking_stop') setIsSpeaking(false);
           } else if (data.type === 'message') {
             if (data.content === "Thinking...") {
               setMessages((prev) => [...prev, { role: 'ai', content: data.content }]);
@@ -374,7 +367,7 @@ function App() {
       <div className={`lisa-container ${showHistory ? 'with-sidebar' : ''}`} data-tauri-drag-region>
         
         <div 
-          className={`lisa-avatar-container ${status === 'connected' ? 'active' : 'inactive'} ${isListening ? 'listening' : ''}`} 
+          className={`lisa-orb-container ${status === 'connected' ? 'active' : 'inactive'} ${isListening ? 'listening' : ''}`} 
           onClick={handleOrbClick} 
           data-tauri-drag-region
         >
@@ -383,7 +376,12 @@ function App() {
               <span>.</span><span>.</span><span>.</span>
             </div>
           )}
-          <img src={isSpeaking ? avatarSpeakingImg : avatarIdleImg} alt="LISA Avatar" className="lisa-avatar" />
+          <div className="hologram-orb">
+            <div className="orb-core"></div>
+            <div className="orb-ring ring1"></div>
+            <div className="orb-ring ring2"></div>
+            <div className="orb-ring ring3"></div>
+          </div>
         </div>
         
         {showText && (
