@@ -334,40 +334,42 @@ function App() {
         {/* Left Column: Glassmorphic Chat */}
         <div className="left-column">
           <div className="chat-glass-container">
-            <div className="status-indicator">
-              <span className={`status-dot ${status !== 'connected' ? 'disconnected' : ''}`}></span>
-              {status === "connected" ? "LISA CONNECTED" : "OFFLINE"}
-            </div>
-            
-            {micError && <div style={{color: '#ff3b30', fontSize: '0.9rem', marginBottom: '10px'}}>{micError}</div>}
+            <div className="chat-content-wrapper">
+              <div className="status-indicator">
+                <span className={`status-dot ${status !== 'connected' ? 'disconnected' : ''}`}></span>
+                {status === "connected" ? "LISA CONNECTED" : "OFFLINE"}
+              </div>
+              
+              {micError && <div style={{color: '#ff0a54', fontSize: '0.95rem', marginBottom: '15px'}}>{micError}</div>}
 
-            <div className="message-log">
-              {messages.length === 0 && <div style={{opacity: 0.5, textAlign: 'center', marginTop: 'auto', marginBottom: 'auto'}}>How can I help you today?</div>}
-              {messages.map((msg, i) => (
-                <div key={i} className={`message ${msg.role === 'user' ? 'user-msg' : 'ai-msg'}`}>
-                   {msg.role === 'user' ? msg.content : <ReactMarkdown>{msg.content}</ReactMarkdown>}
-                </div>
-              ))}
-              <div ref={chatEndRef} />
-            </div>
+              <div className="message-log">
+                {messages.length === 0 && <div style={{opacity: 0.4, textAlign: 'center', marginTop: 'auto', marginBottom: 'auto', fontSize: '1.2rem'}}>Awaiting your command...</div>}
+                {messages.map((msg, i) => (
+                  <div key={i} className={`message ${msg.role === 'user' ? 'user-msg' : 'ai-msg'}`}>
+                     {msg.role === 'user' ? msg.content : <ReactMarkdown>{msg.content}</ReactMarkdown>}
+                  </div>
+                ))}
+                <div ref={chatEndRef} />
+              </div>
 
-            <div className="input-area">
-              <button 
-                className={`mic-btn ${isListening ? 'listening' : ''}`}
-                onClick={toggleMic}
-                title="Voice Input"
-              >
-                🎙️
-              </button>
-              <form onSubmit={handleChatSubmit} style={{ flex: 1, display: 'flex' }}>
-                <input 
-                  type="text" 
-                  className="chat-input" 
-                  placeholder="Message LISA..." 
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                />
-              </form>
+              <div className="input-area">
+                <button 
+                  className={`mic-btn ${isListening ? 'listening' : ''}`}
+                  onClick={toggleMic}
+                  title="Voice Input"
+                >
+                  🎙️
+                </button>
+                <form onSubmit={handleChatSubmit} style={{ flex: 1, display: 'flex' }}>
+                  <input 
+                    type="text" 
+                    className="chat-input" 
+                    placeholder="Message LISA..." 
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                  />
+                </form>
+              </div>
             </div>
           </div>
         </div>
