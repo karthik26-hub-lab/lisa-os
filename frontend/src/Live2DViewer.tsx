@@ -33,8 +33,31 @@ export default function Live2DViewer({ isSpeaking }: Live2DViewerProps) {
     appRef.current = app;
     containerRef.current.appendChild(app.view as HTMLCanvasElement);
 
+    const loadScript = (src: string) => {
+      return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) {
+          resolve(true);
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    };
+
     const loadModel = async () => {
       try {
+        // Ensure scripts are loaded
+        if (!(window as any).Live2D) {
+            await loadScript("https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js");
+            await loadScript("https://cdn.jsdelivr.net/gh/dylanNew/live2d/webgl/Live2D/lib/live2d.min.js");
+        }
+        
+        // Wait a tiny bit for the global to attach just in case
+        await new Promise(r => setTimeout(r, 100));
+
         // Dynamically import to ensure window.PIXI is ready
         const { Live2DModel } = await import('pixi-live2d-display');
         
