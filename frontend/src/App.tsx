@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, MouseEvent as ReactMouseEvent } from "react";
+import { register } from '@tauri-apps/plugin-global-shortcut';
 import "./App.css";
 
 declare global {
@@ -77,7 +78,35 @@ function App() {
       document.body.classList.toggle("dark");
     };
     document.addEventListener("contextmenu", handleContextMenu);
-    return () => document.removeEventListener("contextmenu", handleContextMenu);
+
+    // Register Global Shortcut (Ctrl+K)
+    let unregister: (() => void) | undefined;
+    const setupShortcut = async () => {
+      try {
+        await register('CommandOrControl+K', (event) => {
+          if (event.state === 'Pressed') {
+            setUiState((prev) => {
+              if (prev === "idle") {
+                 residualRef.current = "";
+                 transcriptRef.current = "";
+                 return "listening";
+              } else if (prev === "listening") {
+                 mainRec.current?.stop();
+                 return prev;
+              }
+              return prev;
+            });
+          }
+        });
+      } catch(e) {
+        console.warn("Global shortcut registration failed:", e);
+      }
+    };
+    setupShortcut();
+
+    return () => {
+      document.removeEventListener("contextmenu", handleContextMenu);
+    };
   }, []);
 
   useEffect(() => {
