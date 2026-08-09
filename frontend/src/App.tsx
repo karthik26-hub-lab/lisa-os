@@ -79,8 +79,7 @@ function App() {
     };
     document.addEventListener("contextmenu", handleContextMenu);
 
-    // Register Global Shortcut (Ctrl+K)
-    let unregister: (() => void) | undefined;
+    // Register Global Shortcut (Ctrl+Shift+K)
     const setupShortcut = async () => {
       try {
         await register('CmdOrCtrl+Shift+K', (event) => {
