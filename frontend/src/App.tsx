@@ -1,12 +1,13 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, MouseEvent as ReactMouseEvent } from "react";
 import "./App.css";
 
-// Global interface for Web Speech API
 declare global {
   interface Window {
     webkitSpeechRecognition: any;
   }
 }
+
+type UIState = "idle" | "listening" | "processing";
 
 const playWakeSound = () => {
   try {
@@ -59,42 +60,60 @@ const playStopSound = () => {
 };
 
 function App() {
-  const [status, setStatus] = useState("disconnected");
-  const [isListening, setIsListening] = useState(false);
-  const isListeningRef = useRef(false);
-  const previousIsListening = useRef(false);
-  
-  const [micError, setMicError] = useState<string | null>(null);
+  const [uiState, setUiState] = useState<UIState>("idle");
+  const [duration, setDuration] = useState(0);
   
   const ws = useRef<WebSocket | null>(null);
   const mainRec = useRef<any>(null);
   const silenceTimer = useRef<any>(null);
+  const durationTimer = useRef<any>(null);
   const transcriptRef = useRef<string>("");
   const residualRef = useRef<string>("");
 
   useEffect(() => {
-    isListeningRef.current = isListening;
-    if (isListening && !previousIsListening.current) {
-        playWakeSound();
-    } else if (!isListening && previousIsListening.current) {
-        playStopSound();
-    }
-    previousIsListening.current = isListening;
-  }, [isListening]);
+    // Theme toggler via right click on body
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      document.body.classList.toggle("dark");
+    };
+    document.addEventListener("contextmenu", handleContextMenu);
+    return () => document.removeEventListener("contextmenu", handleContextMenu);
+  }, []);
 
   useEffect(() => {
     ws.current = new WebSocket("ws://127.0.0.1:8000/ws/lisa");
-    ws.current.onopen = () => setStatus("connected");
-    ws.current.onclose = () => setStatus("disconnected");
-    ws.current.onerror = (error) => console.error("WebSocket error:", error);
     
+    ws.current.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            if (data.type === "message" && data.content.startsWith("Typed:")) {
+                setUiState("idle");
+            }
+        } catch(e) {}
+    };
+
     return () => ws.current?.close();
   }, []);
 
   useEffect(() => {
+    if (uiState === "listening") {
+      setDuration(0);
+      durationTimer.current = setInterval(() => {
+        setDuration(d => d + 1);
+      }, 1000);
+      playWakeSound();
+    } else {
+      if (durationTimer.current) clearInterval(durationTimer.current);
+    }
+    
+    return () => {
+      if (durationTimer.current) clearInterval(durationTimer.current);
+    }
+  }, [uiState]);
+
+  useEffect(() => {
     if (!('webkitSpeechRecognition' in window)) {
       console.warn("Speech Recognition API not supported.");
-      setMicError("API Not Supported");
       return;
     }
 
@@ -102,11 +121,7 @@ function App() {
     mainRec.current = new SpeechRecognition();
     mainRec.current.continuous = true;
     mainRec.current.interimResults = true;
-    mainRec.current.lang = "en-US"; // Default language
-
-    mainRec.current.onstart = () => {
-      setMicError(null);
-    };
+    mainRec.current.lang = "en-US";
 
     mainRec.current.onresult = (event: any) => {
       let liveText = "";
@@ -116,9 +131,9 @@ function App() {
       
       const lowerText = liveText.toLowerCase();
 
-      if (!isListeningRef.current) {
+      if (uiState !== "listening") {
          if (lowerText.includes("lisa")) {
-             setIsListening(true);
+             setUiState("listening");
              const parts = lowerText.split("lisa");
              transcriptRef.current = parts.slice(1).join("lisa").trim(); 
              
@@ -144,28 +159,21 @@ function App() {
       if (silenceTimer.current) clearTimeout(silenceTimer.current);
       silenceTimer.current = setTimeout(() => {
         if (mainRec.current) mainRec.current.stop();
-      }, 3000);
-    };
-
-    mainRec.current.onerror = (event: any) => {
-      console.error("Main rec error:", event.error);
-      setMicError(event.error);
-      if (event.error === 'not-allowed') {
-        setIsListening(false);
-      }
+      }, 2500);
     };
 
     mainRec.current.onend = () => {
-      if (isListeningRef.current) {
-          setIsListening(false);
+      if (uiState === "listening") {
+          playStopSound();
+          setUiState("processing");
           if (silenceTimer.current) clearTimeout(silenceTimer.current);
           
           const finalStr = transcriptRef.current.trim();
-          if (finalStr) {
-            // Send to backend to type it out via pyautogui
-            if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-              ws.current.send(finalStr);
-            }
+          if (finalStr && ws.current && ws.current.readyState === WebSocket.OPEN) {
+            ws.current.send(finalStr);
+          } else {
+             // If nothing to send, return to idle
+             setUiState("idle");
           }
       }
       
@@ -182,43 +190,73 @@ function App() {
          mainRec.current.stop();
       }
     };
-  }, []);
+  }, [uiState]);
 
-  const toggleMic = () => {
-    if (isListening) {
+  const toggleMic = (e: ReactMouseEvent) => {
+    // Only toggle on left click
+    if (e.button !== 0) return;
+    
+    if (uiState === "listening") {
       mainRec.current?.stop();
-    } else {
-      setIsListening(true);
+    } else if (uiState === "idle") {
+      setUiState("listening");
       residualRef.current = "";
       transcriptRef.current = "";
     }
   };
 
-  return (
-    <>
-      <div className="drag-region" data-tauri-drag-region></div>
-      <div className={`whisper-pill ${isListening ? 'listening' : ''}`}>
-        <div className="mic-icon" onClick={toggleMic}>
-          🎙️
+  const formatDuration = (seconds: number) => {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  // Render the appropriate state
+  if (uiState === "listening") {
+    return (
+      <div className="drag-region" data-tauri-drag-region>
+        <div className="pill-container pill-recording">
+          <div className="waveform-container">
+            <div className="waveform-bar"></div>
+            <div className="waveform-bar"></div>
+            <div className="waveform-bar"></div>
+            <div className="waveform-bar"></div>
+            <div className="waveform-bar"></div>
+          </div>
+          <div className="text-primary-label animate-pulse">{formatDuration(duration)}</div>
+          <button className="stop-btn" onClick={toggleMic}>
+            <span className="material-symbols-outlined icon-error">close</span>
+          </button>
         </div>
-        
-        {isListening ? (
-          <div className="waveform">
-            <div className="bar"></div>
-            <div className="bar"></div>
-            <div className="bar"></div>
-            <div className="bar"></div>
-            <div className="bar"></div>
-          </div>
-        ) : (
-          <div className="status-text" data-tauri-drag-region>
-            {status === "connected" ? "WhisperFlow" : "Connecting..."}
-          </div>
-        )}
-        
-        {micError && <div className="error-text">Mic Error: {micError}</div>}
       </div>
-    </>
+    );
+  }
+  
+  if (uiState === "processing") {
+    return (
+      <div className="drag-region" data-tauri-drag-region>
+        <div className="pill-container pill-processing">
+          <span className="material-symbols-outlined icon-primary animate-spin" style={{marginRight: '12px'}}>progress_activity</span>
+          <span className="text-headline" style={{fontSize: '16px', margin: 0, color: 'var(--text-main)'}}>Understanding...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Idle
+  return (
+    <div className="drag-region" data-tauri-drag-region>
+      <div className="pill-container pill-idle" onClick={toggleMic}>
+        <div className="mic-btn">
+          <span className="material-symbols-outlined icon-primary" style={{fontVariationSettings: "'FILL' 1"}}>mic</span>
+        </div>
+        <span className="text-headline">Press to speak</span>
+        <div className="divider"></div>
+        <span className="text-label">
+          <span className="material-symbols-outlined" style={{fontSize: '16px'}}>keyboard_command_key</span> + K
+        </span>
+      </div>
+    </div>
   );
 }
 

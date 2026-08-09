@@ -1,19 +1,66 @@
 :root {
-  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  color: #ffffff;
+  /* Aura Light Theme (Default) */
+  --bg-color: transparent;
+  --pill-bg: rgba(255, 255, 255, 0.4);
+  --pill-bg-hover: rgba(255, 255, 255, 0.6);
+  --pill-bg-recording: rgba(255, 255, 255, 0.5);
+  --pill-border: rgba(255, 255, 255, 0.8);
+  --pill-border-active: rgba(107, 56, 212, 0.3);
+  --pill-shadow: 0 4px 24px rgba(0, 0, 0, 0.04), 0 20px 40px rgba(0, 0, 0, 0.08);
+  --pill-shadow-hover: 0 8px 32px rgba(107, 56, 212, 0.15);
+  
+  --primary: #6b38d4;
+  --primary-light: rgba(107, 56, 212, 0.1);
+  --primary-light-hover: rgba(107, 56, 212, 0.2);
+  
+  --text-main: #1c1b1b;
+  --text-secondary: #494454;
+  --divider: rgba(203, 195, 215, 0.5);
+  
+  --error: #ba1a1a;
+  --error-bg: rgba(186, 26, 26, 0.1);
+  --error-bg-hover: rgba(186, 26, 26, 0.2);
+  
+  --font-display: 'Hanken Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+body.dark {
+  /* Dark Liquid Glass Theme */
+  --pill-bg: rgba(10, 10, 15, 0.7);
+  --pill-bg-hover: rgba(20, 20, 25, 0.8);
+  --pill-bg-recording: rgba(15, 15, 20, 0.75);
+  --pill-border: rgba(255, 255, 255, 0.15);
+  --pill-border-active: rgba(0, 212, 255, 0.4);
+  --pill-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), inset 0 2px 10px rgba(255, 255, 255, 0.1);
+  --pill-shadow-hover: 0 20px 50px rgba(0, 0, 0, 0.8), inset 0 2px 15px rgba(255, 255, 255, 0.15);
+  
+  --primary: #00d4ff;
+  --primary-light: rgba(0, 212, 255, 0.1);
+  --primary-light-hover: rgba(0, 212, 255, 0.2);
+  
+  --text-main: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.6);
+  --divider: rgba(255, 255, 255, 0.2);
+  
+  --error: #ff0a54;
+  --error-bg: rgba(255, 10, 84, 0.1);
+  --error-bg-hover: rgba(255, 10, 84, 0.2);
 }
 
 body {
   margin: 0;
   height: 100vh;
   width: 100vw;
-  /* Completely transparent so it floats on the desktop */
-  background-color: transparent; 
+  background-color: var(--bg-color); 
   overflow: hidden;
   user-select: none;
   display: flex;
   justify-content: center;
   align-items: center;
+  font-family: var(--font-body);
+  color: var(--text-main);
+  transition: background-color 0.5s ease, color 0.5s ease;
 }
 
 #root {
@@ -24,7 +71,7 @@ body {
   align-items: center;
 }
 
-/* Drag region for Tauri so user can move the pill */
+/* Drag region for Tauri */
 .drag-region {
   position: absolute;
   top: 0;
@@ -34,129 +81,176 @@ body {
   z-index: 0;
 }
 
-/* The Pill */
-.whisper-pill {
+/* Base Glass Pill */
+.pill-container {
   position: relative;
   z-index: 10;
   display: flex;
   align-items: center;
-  gap: 15px;
-  background: rgba(10, 10, 15, 0.7);
-  backdrop-filter: blur(25px) saturate(200%);
-  -webkit-backdrop-filter: blur(25px) saturate(200%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-top: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 10px 20px;
-  border-radius: 50px;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), inset 0 2px 10px rgba(255, 255, 255, 0.1);
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  min-width: 120px;
+  
+  background: var(--pill-bg);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border: 1px solid var(--pill-border);
+  box-shadow: var(--pill-shadow);
+  border-radius: 9999px;
+  
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.pill-container:hover {
+  background: var(--pill-bg-hover);
+  box-shadow: var(--pill-shadow-hover);
+}
+
+.pill-container:active {
+  transform: scale(0.95);
+}
+
+/* Specific Pill States */
+.pill-idle {
+  height: 64px;
+  padding: 0 24px;
+}
+
+.pill-recording {
+  height: 56px;
+  padding: 0 24px;
+  width: 256px;
+  justify-content: space-between;
+  background: var(--pill-bg-recording);
+  border-color: var(--pill-border-active);
+  box-shadow: 0 0 20px var(--primary-light);
+}
+.pill-recording:hover {
+  background: var(--pill-bg-recording);
+}
+
+.pill-processing {
+  height: 56px;
+  padding: 0 24px;
+  width: 224px;
   justify-content: center;
-  pointer-events: auto; /* Allow clicking */
 }
 
-/* Noise texture on the pill */
-.whisper-pill::after {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
-  pointer-events: none;
-  border-radius: inherit;
-  z-index: -1;
-}
-
-.whisper-pill:hover {
-  transform: scale(1.05);
-  background: rgba(20, 20, 25, 0.8);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), inset 0 2px 15px rgba(255, 255, 255, 0.15);
-}
-
-.whisper-pill.listening {
-  border-color: rgba(0, 212, 255, 0.5);
-  box-shadow: 0 15px 40px rgba(0, 212, 255, 0.3), inset 0 2px 15px rgba(0, 212, 255, 0.2);
-  min-width: 200px;
-}
-
-/* Mic Button */
-.mic-icon {
+/* Mic Icon Container */
+.mic-btn {
   width: 40px;
   height: 40px;
   border-radius: 50%;
+  background: var(--primary-light);
   display: flex;
-  justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02));
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
-  font-size: 1.2rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  z-index: 2;
+  justify-content: center;
+  margin-right: 16px;
+  transition: background-color 0.3s;
+}
+.pill-container:hover .mic-btn {
+  background: var(--primary-light-hover);
 }
 
-.mic-icon:hover {
-  background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05));
-  box-shadow: 0 0 15px rgba(255,255,255,0.2);
+/* Typography */
+.text-headline {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+.pill-idle .text-headline {
+  margin-right: 24px;
 }
 
-.whisper-pill.listening .mic-icon {
-  background: linear-gradient(135deg, #00d4ff, #0055ff);
-  border-color: transparent;
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
-  animation: pulse-glow 2s infinite;
-}
-
-@keyframes pulse-glow {
-  0% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.7); }
-  70% { box-shadow: 0 0 0 15px rgba(0, 212, 255, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0); }
-}
-
-/* Waveform Animation */
-.waveform {
+.text-label {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   gap: 4px;
-  height: 30px;
-  margin-left: 10px;
-  z-index: 2;
 }
 
-.bar {
+.text-primary-label {
+  color: var(--primary);
+  font-size: 13px;
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+/* Structural Elements */
+.divider {
+  height: 24px;
+  width: 1px;
+  background-color: var(--divider);
+  margin-right: 16px;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.icon-primary { color: var(--primary); }
+.icon-error { color: var(--error); font-size: 20px; }
+
+/* Stop Button */
+.stop-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--error-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  padding: 0;
+}
+.stop-btn:hover {
+  background: var(--error-bg-hover);
+}
+
+/* Animations */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+
+/* Waveform */
+.waveform-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+}
+
+.waveform-bar {
   width: 4px;
-  height: 10px;
-  background: #00d4ff;
-  border-radius: 2px;
-  animation: wave 1s ease-in-out infinite;
+  background-color: var(--primary);
+  border-radius: 9999px;
+  animation: bounce 1.2s infinite ease-in-out alternate;
 }
 
-.bar:nth-child(1) { animation-delay: 0.0s; }
-.bar:nth-child(2) { animation-delay: 0.1s; }
-.bar:nth-child(3) { animation-delay: 0.2s; }
-.bar:nth-child(4) { animation-delay: 0.3s; }
-.bar:nth-child(5) { animation-delay: 0.4s; }
+.waveform-bar:nth-child(1) { animation-delay: -0.6s; height: 12px; }
+.waveform-bar:nth-child(2) { animation-delay: -0.4s; height: 24px; }
+.waveform-bar:nth-child(3) { animation-delay: -0.2s; height: 16px; }
+.waveform-bar:nth-child(4) { animation-delay: -0.8s; height: 20px; }
+.waveform-bar:nth-child(5) { animation-delay: -0.5s; height: 14px; }
 
-@keyframes wave {
-  0%, 100% { height: 10px; opacity: 0.5; }
-  50% { height: 25px; opacity: 1; background: #fff; }
-}
-
-/* Status Text */
-.status-text {
-  font-size: 0.95rem;
-  font-weight: 300;
-  color: rgba(255, 255, 255, 0.6);
-  margin-left: 5px;
-  z-index: 2;
-  white-space: nowrap;
-}
-
-/* Error text */
-.error-text {
-  color: #ff0a54;
-  font-size: 0.85rem;
-  font-weight: 500;
-  margin-left: 10px;
-  z-index: 2;
+@keyframes bounce {
+  0% { transform: scaleY(0.4); }
+  100% { transform: scaleY(1); }
 }
