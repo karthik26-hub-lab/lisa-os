@@ -146,6 +146,10 @@ function App() {
       return;
     }
 
+    if (uiState !== "listening") {
+      return;
+    }
+
     const SpeechRecognition = window.webkitSpeechRecognition;
     mainRec.current = new SpeechRecognition();
     mainRec.current.continuous = true;
@@ -158,27 +162,6 @@ function App() {
          liveText += event.results[i][0].transcript;
       }
       
-      const lowerText = liveText.toLowerCase();
-
-      if (uiState !== "listening") {
-         if (lowerText.includes("lisa")) {
-             setUiState("listening");
-             const parts = lowerText.split("lisa");
-             transcriptRef.current = parts.slice(1).join("lisa").trim(); 
-             
-             if (silenceTimer.current) clearTimeout(silenceTimer.current);
-             silenceTimer.current = setTimeout(() => {
-               if (mainRec.current) mainRec.current.stop();
-             }, 3000);
-         } else {
-             if (silenceTimer.current) clearTimeout(silenceTimer.current);
-             silenceTimer.current = setTimeout(() => {
-               if (mainRec.current) mainRec.current.stop();
-             }, 1500);
-         }
-         return;
-      }
-
       if (residualRef.current) {
           transcriptRef.current = residualRef.current + " " + liveText;
       } else {
@@ -205,10 +188,8 @@ function App() {
              setUiState("idle");
           }
       }
-      
       transcriptRef.current = "";
       residualRef.current = "";
-      try { mainRec.current.start(); } catch(e) {}
     };
 
     try { mainRec.current.start(); } catch(e) {}
