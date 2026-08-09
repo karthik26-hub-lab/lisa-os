@@ -1,12 +1,13 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 import uvicorn
 import json
+import asyncio
 import pyautogui
 import pygetwindow as gw
 import pyperclip
 import time
 from fastapi.middleware.cors import CORSMiddleware
-from brain.llm_client import process_whisperflow
+from brain.llm_client import process_whisperflow, run_memory_agent
 
 app = FastAPI(title="WhisperFlow Backend")
 
@@ -101,6 +102,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 "type": "message", 
                 "content": f"Typed: {polished_text[:20]}..." if len(polished_text) > 20 else f"Typed: {polished_text}"
             }), websocket)
+            
+            # Spawn background memory agent to analyze and store long-term context
+            asyncio.create_task(run_memory_agent(raw_data, polished_text))
             
     except WebSocketDisconnect:
         manager.disconnect(websocket)
