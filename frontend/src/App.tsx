@@ -83,7 +83,7 @@ function App() {
     let unregister: (() => void) | undefined;
     const setupShortcut = async () => {
       try {
-        await register('CommandOrControl+K', (event) => {
+        await register('CmdOrCtrl+Shift+K', (event) => {
           if (event.state === 'Pressed') {
             setUiState((prev) => {
               if (prev === "idle") {
@@ -282,7 +282,7 @@ function App() {
         <span className="text-headline">Press to speak</span>
         <div className="divider"></div>
         <span className="text-label">
-          <span className="material-symbols-outlined" style={{fontSize: '16px'}}>keyboard_command_key</span> + K
+          <span className="material-symbols-outlined" style={{fontSize: '16px'}}>keyboard_command_key</span> + Shift + K
         </span>
       </div>
     </div>
