@@ -12,13 +12,27 @@
   "app": {
     "windows": [
       {
-        "title": "LISA",
-        "width": 800,
-        "height": 600,
+        "title": "Aura AI",
+        "label": "island",
+        "width": 600,
+        "height": 200,
         "decorations": false,
         "transparent": true,
         "shadow": false,
-        "alwaysOnTop": true
+        "alwaysOnTop": true,
+        "resizable": false
+      },
+      {
+        "title": "Aura AI Dashboard",
+        "label": "main",
+        "width": 900,
+        "height": 650,
+        "decorations": false,
+        "transparent": true,
+        "shadow": false,
+        "alwaysOnTop": false,
+        "visible": false,
+        "resizable": true
       }
     ],
     "security": {
@@ -37,6 +51,7 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "externalBin": ["bin/backend"]
   }
 }

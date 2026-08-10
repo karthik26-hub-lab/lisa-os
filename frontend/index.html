@@ -4,16 +4,119 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     
-    <!-- Google Fonts: Hanken Grotesk, Inter, and Outfit -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Google Fonts: Geist, Hanken Grotesk, Inter, and Outfit -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@600;700&family=Inter:wght@400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@500&family=Hanken+Grotesk:wght@600;700&family=Inter:wght@400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <!-- Material Symbols -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LISA</title>
+    <title>Aura AI</title>
+
+    <script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "outline-variant": "#cbc3d7",
+                      "surface-container-highest": "#e5e2e1",
+                      "on-tertiary-fixed-variant": "#673d00",
+                      "primary": "#6b38d4",
+                      "background": "#fcf9f8",
+                      "on-surface": "#1c1b1b",
+                      "on-primary": "#ffffff",
+                      "secondary-container": "#dfdfe1",
+                      "surface": "#fcf9f8",
+                      "primary-fixed-dim": "#d0bcff",
+                      "on-primary-container": "#fffbff",
+                      "error-container": "#ffdad6",
+                      "on-error-container": "#93000a",
+                      "tertiary-fixed-dim": "#ffb869",
+                      "inverse-on-surface": "#f3f0ef",
+                      "primary-fixed": "#e9ddff",
+                      "secondary-fixed-dim": "#c6c6c8",
+                      "outline": "#7b7486",
+                      "tertiary": "#855000",
+                      "secondary-fixed": "#e2e2e4",
+                      "tertiary-container": "#a76500",
+                      "inverse-surface": "#313030",
+                      "primary-container": "#8455ef",
+                      "on-tertiary-container": "#fffbff",
+                      "surface-container-low": "#f6f3f2",
+                      "inverse-primary": "#d0bcff",
+                      "surface-tint": "#6d3bd7",
+                      "on-background": "#1c1b1b",
+                      "secondary": "#5d5e60",
+                      "on-primary-fixed-variant": "#5516be",
+                      "surface-container-high": "#ebe7e7",
+                      "error": "#ba1a1a",
+                      "on-secondary-fixed": "#1a1c1d",
+                      "on-secondary-container": "#616365",
+                      "on-primary-fixed": "#23005c",
+                      "surface-variant": "#e5e2e1",
+                      "surface-bright": "#fcf9f8",
+                      "on-tertiary": "#ffffff",
+                      "on-error": "#ffffff",
+                      "surface-dim": "#dcd9d9",
+                      "on-tertiary-fixed": "#2c1700",
+                      "on-secondary": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "tertiary-fixed": "#ffdcbb",
+                      "surface-container": "#f0edec",
+                      "on-surface-variant": "#494454",
+                      "on-secondary-fixed-variant": "#454749"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "unit": "4px",
+                      "xs": "8px",
+                      "sm": "16px",
+                      "margin": "48px",
+                      "lg": "40px",
+                      "xl": "64px",
+                      "gutter": "24px",
+                      "md": "24px"
+              },
+              "fontFamily": {
+                      "headline-lg-mobile": ["Hanken Grotesk"],
+                      "headline-lg": ["Hanken Grotesk"],
+                      "display": ["Hanken Grotesk"],
+                      "body-lg": ["Inter"],
+                      "body-md": ["Inter"],
+                      "headline-md": ["Hanken Grotesk"],
+                      "label-sm": ["Geist"]
+              },
+              "fontSize": {
+                      "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "label-sm": ["13px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}]
+              },
+              "keyframes": {
+                 "rapid-wave": {
+                    "0%, 100%": { transform: "scaleY(0.3)" },
+                    "50%": { transform: "scaleY(1.0)" }
+                 }
+              },
+              "animation": {
+                 "rapid-wave": "rapid-wave 0.5s ease-in-out infinite"
+              }
+            }
+          }
+        }
+    </script>
 
     <!-- Live2D Cubism Core Scripts -->
     <script src="https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js"></script>
