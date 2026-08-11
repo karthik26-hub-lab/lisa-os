@@ -9,6 +9,11 @@
   [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 </div>
 
+<br>
+<div align="center">
+  <img src="assets/screenshot.png" alt="Lisa Flow Dashboard Screenshot" style="border-radius: 20px; box-shadow: 0px 10px 30px rgba(0,0,0,0.5);" />
+</div>
+
 ---
 
 Lisa Flow is a lightweight, background-running AI assistant that transforms your messy thoughts and phonetic "Tanglish" into perfectly polished, professional text. 
