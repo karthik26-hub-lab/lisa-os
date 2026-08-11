@@ -7,11 +7,45 @@ import pygetwindow as gw
 import pyperclip
 import time
 import threading
+import os
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from brain.llm_client import process_whisperflow, run_memory_agent, STM_BUFFER
+from brain import memory_manager
 from brain import settings_manager
+import datetime
 import keyboard
+import psutil
+
+STATS_FILE = os.path.join(os.path.dirname(__file__), "brain", "stats.json")
+
+def load_stats():
+    if not os.path.exists(STATS_FILE):
+        return {"totalWords": 0, "totalChars": 0, "dictationCount": 0}
+    try:
+        with open(STATS_FILE, "r") as f:
+            return json.load(f)
+    except:
+        return {"totalWords": 0, "totalChars": 0, "dictationCount": 0}
+
+def save_stats(stats):
+    with open(STATS_FILE, "w") as f:
+        json.dump(stats, f)
+
+HISTORY_FILE = os.path.join(os.path.dirname(__file__), "brain", "history.json")
+
+def load_history_persistent():
+    if not os.path.exists(HISTORY_FILE):
+        return []
+    try:
+        with open(HISTORY_FILE, "r") as f:
+            return json.load(f)
+    except:
+        return []
+
+def save_history_persistent(history):
+    with open(HISTORY_FILE, "w") as f:
+        json.dump(history, f)
 
 last_active_window = None
 
@@ -30,8 +64,11 @@ threading.Thread(target=track_focus, daemon=True).start()
 
 class SettingsUpdate(BaseModel):
     api_keys: dict[str, str]
+    models: dict[str, str] = {}
+    active_key_name: str = "gemini"
     theme: str
     processing_mode: str
+    global_hotkey: str = "Alt+X"
 app = FastAPI(title="WhisperFlow Backend")
 
 app.add_middleware(
@@ -59,24 +96,48 @@ class ConnectionManager:
     async def send_personal_message(self, message: str, websocket: WebSocket):
         await websocket.send_text(message)
 
+    async def broadcast(self, message: str):
+        for connection in self.active_connections:
+            try:
+                await connection.send_text(message)
+            except:
+                pass
+
 manager = ConnectionManager()
 loop = None
 
+async def system_stats_loop():
+    # Initial call to cpu_percent to initialize
+    psutil.cpu_percent(interval=None)
+    while True:
+        try:
+            cpu = psutil.cpu_percent(interval=None)
+            ram = psutil.virtual_memory().percent
+            battery = psutil.sensors_battery()
+            bat_percent = battery.percent if battery else 100
+            is_plugged = battery.power_plugged if battery else True
+            
+            stats = {
+                "type": "system_stats",
+                "cpu": cpu,
+                "ram": ram,
+                "battery": bat_percent,
+                "plugged": is_plugged
+            }
+            if manager.active_connections:
+                await manager.broadcast(json.dumps(stats))
+        except Exception as e:
+            pass
+        await asyncio.sleep(2)
+
+current_hotkey = "alt+x"
+
 @app.on_event("startup")
 async def startup_event():
-    global loop
+    global loop, current_hotkey
     loop = asyncio.get_running_loop()
-    
-    def on_hotkey():
-        if loop and manager.active_connections:
-            for ws in manager.active_connections:
-                asyncio.run_coroutine_threadsafe(
-                    manager.send_personal_message(json.dumps({"type": "toggle_mic"}), ws),
-                    loop
-                )
-                
-    keyboard.add_hotkey('alt+x', on_hotkey)
-    keyboard.add_hotkey('ctrl+shift+k', on_hotkey)
+    current_hotkey = settings_manager.load_settings().get("global_hotkey", "Alt+X").lower()
+    asyncio.create_task(system_stats_loop())
 
 def get_context():
     """
@@ -119,30 +180,93 @@ async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:
         while True:
-            raw_data = await websocket.receive_text()
-            print(f"Received raw dictation: {raw_data}")
+            msg = await websocket.receive_text()
+            msg_type = "dictation"
+            try:
+                data = json.loads(msg)
+                if data.get("type") == "text_polish":
+                    msg_type = "text_polish"
+                    source = "global"
+                else:
+                    raw_data = data.get("text", "")
+                    source = data.get("source", "global")
+            except:
+                raw_data = msg
+                source = "global"
+
+            # Grab OS Context
+            app_context = get_context()
+
+            if msg_type == "text_polish":
+                raw_data = app_context.get("selected_text", "")
+                if not raw_data:
+                    await manager.send_personal_message(json.dumps({"type": "chat_result", "content": "[No text selected]", "source": "global"}), websocket)
+                    continue
+                print(f"Executing Text Polish on: {raw_data}")
+            else:
+                print(f"Received raw dictation from {source}: {raw_data}")
             
             # Send acknowledgement to UI
             await manager.send_personal_message(json.dumps({"type": "message", "content": "Polishing..."}), websocket)
-            
-            # Grab OS Context
-            app_context = get_context()
+
             
             # Pass through the LLM for polishing
             polished_text = process_whisperflow(raw_data, app_context)
             print(f"Polished dictation: {polished_text}")
             
-            # Instantly type the polished text into the active window
-            # Restore focus to the last real application if we clicked the Island
-            if last_active_window:
-                try:
-                    last_active_window.activate()
-                    time.sleep(0.2)
-                except Exception as e:
-                    print(f"Could not activate window: {e}")
+            # Update Persistent Stats
+            stats = load_stats()
+            stats["totalWords"] += len(polished_text.split())
+            stats["totalChars"] += len(polished_text)
+            stats["dictationCount"] += 1
+            save_stats(stats)
             
-            # Type the text
-            pyautogui.write(polished_text, interval=0.005)
+            # Update Persistent History
+            phist = load_history_persistent()
+            phist.append({
+                "raw": raw_data,
+                "polished": polished_text,
+                "timestamp": time.time()
+            })
+            if len(phist) > 200:
+                phist = phist[-200:]
+            save_history_persistent(phist)
+            
+            # Broadcast to all clients (Dashboard) that stats have updated
+            await manager.broadcast(json.dumps({"type": "stats_updated"}))
+            
+            # Instantly type the polished text into the active window
+            # Only attempt to restore focus if the Lisa UI currently has focus
+            current_win = gw.getActiveWindow()
+            if current_win and ("lisa flow" in current_win.title.lower() or "island" in current_win.title.lower() or "aura" in current_win.title.lower()):
+                if last_active_window:
+                    try:
+                        last_active_window.activate()
+                        time.sleep(0.2)
+                    except Exception as e:
+                        print(f"Could not activate window: {e}")
+            
+            # Save original clipboard
+            old_clipboard = pyperclip.paste()
+
+            # Type the text safely without triggering 'Send' in chat apps
+            safe_text = polished_text.replace('\r', '')
+            lines = safe_text.split('\n')
+            for i, line in enumerate(lines):
+                if line:
+                    pyperclip.copy(line)
+                    time.sleep(0.05) # Wait for OS clipboard to update
+                    pyautogui.hotkey('ctrl', 'v')
+                    time.sleep(0.05) # Wait for paste to register
+                if i < len(lines) - 1:
+                    pyautogui.hotkey('shift', 'enter')
+                    
+            # Restore clipboard
+            time.sleep(0.1)
+            try:
+                pyperclip.copy(old_clipboard)
+            except:
+                pass
             
             # Send final status back to UI
             await manager.send_personal_message(json.dumps({
@@ -167,13 +291,27 @@ def get_settings():
 @app.post("/api/settings")
 def update_settings(settings: SettingsUpdate):
     settings_manager.save_settings(settings.dict())
+    global current_hotkey
+    current_hotkey = settings.global_hotkey.lower()
     return {"status": "success"}
+
+@app.get("/api/memory")
+def get_memory():
+    return memory_manager.get_raw_memory()
+
+@app.delete("/api/memory/{category}/{key}")
+def delete_memory(category: str, key: str):
+    success = memory_manager.delete_memory(category, key)
+    if success:
+        return {"status": "success"}
+    return {"status": "error", "message": "Memory not found"}, 404
 
 @app.get("/api/history")
 def get_history():
     import datetime
     history = []
-    for turn in reversed(STM_BUFFER):
+    history_data = load_history_persistent()
+    for turn in reversed(history_data):
         timestamp = turn.get("timestamp")
         time_str = "Just now"
         if timestamp:
@@ -183,24 +321,33 @@ def get_history():
         history.append({
             "title": "Dictation",
             "desc": turn["polished"],
-            "time": time_str
+            "time": time_str,
+            "timestamp": timestamp
         })
     return history
 
+@app.delete("/api/history/{timestamp}")
+def delete_history_item(timestamp: float):
+    history_data = load_history_persistent()
+    history_data = [item for item in history_data if str(item.get("timestamp")) != str(timestamp)]
+    save_history_persistent(history_data)
+    return {"status": "success"}
+
 @app.delete("/api/history")
 def clear_history():
-    STM_BUFFER.clear()
+    save_history_persistent([])
+    try:
+        from brain.llm_client import STM_BUFFER
+        STM_BUFFER.clear()
+    except:
+        pass
     return {"status": "success"}
 
 @app.get("/api/stats")
 def get_stats():
-    total_words = 0
-    total_chars = 0
-    for turn in STM_BUFFER:
-        text = turn["polished"]
-        total_words += len(text.split())
-        total_chars += len(text)
-        
+    stats = load_stats()
+    total_words = stats.get("totalWords", 0)
+    
     # Estimate time saved: Typing speed avg ~40 WPM vs Dictation ~120 WPM
     # Time saved = (Words / 40) - (Words / 120) minutes
     if total_words > 0:
@@ -225,7 +372,7 @@ def get_stats():
     return {
         "totalWords": total_words_str,
         "timeSaved": time_saved_str,
-        "dictationCount": len(STM_BUFFER)
+        "dictationCount": stats.get("dictationCount", 0)
     }
 
 if __name__ == "__main__":

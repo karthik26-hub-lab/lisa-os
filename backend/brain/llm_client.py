@@ -39,7 +39,7 @@ def process_whisperflow(raw_text: str, app_context: dict) -> str:
     uses short-term and long-term memory, and returns a polished prompt.
     """
     global STM_BUFFER
-    api_key = settings_manager.get_key("gemini")
+    api_key = settings_manager.get_api_key()
     if not api_key:
         return raw_text 
     
@@ -82,7 +82,9 @@ SELECTED MODE:
 {mode}
 
 GENERAL RULES:
-- First understand the user's intended meaning before rewriting.
+- CRITICAL INSTRUCTION: You are a pure text transformation engine, NOT a conversational chatbot. Do NOT answer the user's questions, do NOT provide advice, and do NOT engage in conversation. If the user dictates a question, a complaint, or a request for help, you must simply rewrite/polish their text so THEY can send it to someone else. NEVER reply to the content of their text.
+- IMPORTANT TANGLISH RULE: The user often speaks a continuous mix of Tamil and English (Tanglish). Because the speech-to-text engine is English-only, Tamil words will often be transcribed as random phonetic English gibberish (e.g. "enna panra" might become "in a panda"). You MUST mentally sound out the gibberish to decipher the actual Tamil/Tanglish meaning before processing the input.
+- First understand the user's intended meaning before rewriting, especially when decoding phonetic Tanglish.
 - Preserve the user's core intent, facts, and important details.
 - Never invent information, facts, examples, names, numbers, or requirements that are not present or clearly implied.
 - Fix unclear wording when necessary, but do not change the user's intended meaning.
@@ -178,7 +180,7 @@ You have access to the user's Application Context, Long-Term Memory, and Short-T
         
     except Exception as e:
         print(f"Error communicating with Cloud LLM: {str(e)}")
-        return raw_text
+        return f"[Processing Error: Please ensure you are using a valid Google Gemini API key. Other providers require additional setup. Details: {str(e)}]"
 
 async def run_memory_agent(raw_text: str, polished_text: str):
     """Runs asynchronously in the background to analyze conversation and update Long-Term Memory."""
@@ -255,9 +257,9 @@ async def run_memory_agent(raw_text: str, polished_text: str):
         
         prompt = f"User spoke: {raw_text}\nSystem typed: {polished_text}\nShould anything be remembered?"
         
-        # We can just use the standard generate_content here because tools are strictly defined
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
+        # Use fallback loop to ensure memory agent works with whatever model the user has access to
+        response = generate_with_fallback(
+            client,
             contents=prompt,
             config=config
         )

@@ -2,6 +2,12 @@
 echo ========================================================
 echo WhisperFlow Native Application Builder
 echo ========================================================
+echo Compiling Python Backend (this may take a few minutes)...
+cd backend
+call build_backend.bat
+cd ..
+
+echo.
 echo Compiling the Tauri frontend into a standalone .exe...
 echo This may take a minute or two.
 echo.

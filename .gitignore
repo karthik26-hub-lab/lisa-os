@@ -29,3 +29,9 @@ Thumbs.db
 
 # Executables
 rustup-init.exe
+
+backend/brain/*.json
+backend/settings.json
+backend/build/
+frontend/src-tauri/bin/*.exe
+

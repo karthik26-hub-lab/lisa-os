@@ -13,6 +13,10 @@ def _load_memory():
     except Exception:
         return {"preferences": {}, "projects": {}, "active_tasks": {}}
 
+def get_raw_memory():
+    """Returns the raw memory dictionary for the API."""
+    return _load_memory()
+
 def _save_memory(data):
     with open(MEMORY_FILE, "w") as f:
         json.dump(data, f, indent=4)
@@ -54,6 +58,16 @@ def complete_task(task_name: str):
         del mem["active_tasks"][task_name]
         _save_memory(mem)
         print(f"[MEMORY] Completed task: {task_name}")
+
+def delete_memory(category: str, key: str):
+    """Deletes a specific memory entry."""
+    mem = _load_memory()
+    if category in mem and key in mem[category]:
+        del mem[category][key]
+        _save_memory(mem)
+        print(f"[MEMORY] Deleted {category} -> {key}")
+        return True
+    return False
 
 def get_full_memory_context() -> str:
     """Returns a formatted string of all relevant memory for the LLM."""

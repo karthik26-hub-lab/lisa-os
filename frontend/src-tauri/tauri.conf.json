@@ -14,13 +14,14 @@
       {
         "title": "Aura AI",
         "label": "island",
-        "width": 600,
-        "height": 200,
+        "width": 160,
+        "height": 60,
         "decorations": false,
         "transparent": true,
         "shadow": false,
         "alwaysOnTop": true,
-        "resizable": false
+        "resizable": false,
+        "skipTaskbar": true
       },
       {
         "title": "Aura AI Dashboard",
