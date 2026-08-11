@@ -7,6 +7,7 @@
   [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
   [![FastAPI](https://img.shields.io/badge/FastAPI-0.100-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
   [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+  [![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D6?logo=windows&logoColor=white)](#)
 </div>
 
 <br>
@@ -17,6 +18,8 @@
 </div>
 
 ---
+
+> ⚠️ **Note:** Lisa Flow is currently a **Windows-only** application. A macOS port is entirely possible, but currently unsupported due to Windows-specific window tracking (`pygetwindow`) and build scripts.
 
 I built Lisa Flow because I was tired of standard voice-to-text engines missing the context of what I was trying to say. Worse, since I frequently speak in "Tanglish" (a mix of Tamil and English), standard tools would just spit out phonetic gibberish.
 
