@@ -11,7 +11,9 @@
 
 <br>
 <div align="center">
-  <img src="assets/screenshot.png" alt="Lisa Flow Dashboard Screenshot" style="border-radius: 20px; box-shadow: 0px 10px 30px rgba(0,0,0,0.5);" />
+  <img src="assets/screenshot.png" alt="Lisa Flow Dashboard" width="48%" style="border-radius: 12px; box-shadow: 0px 8px 24px rgba(0,0,0,0.15);" />
+  &nbsp;&nbsp;
+  <img src="assets/screenshot_settings.png" alt="Lisa Flow Settings" width="48%" style="border-radius: 12px; box-shadow: 0px 8px 24px rgba(0,0,0,0.15);" />
 </div>
 
 ---
